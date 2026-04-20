@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('gs_theme')||'light')</script>
+  <title>GlucoSense — Kidney Disease Assessment</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../assets/css/global.css"/>
+  <style>
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;transition:background .25s,border-color .25s}
+    .step-bar{display:flex;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px;background:var(--card)}
+    .step-tab{flex:1;padding:13px 16px;text-align:center;font-size:.83rem;font-weight:600;color:var(--muted);background:transparent;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;border-right:1px solid var(--border)}
+    .step-tab:last-child{border-right:none}
+    .step-tab.active{background:rgba(168,85,247,.07);color:#a855f7}
+    .step-tab .sn{display:block;font-size:1rem;margin-bottom:2px}
+    .step{display:none}.step.active{display:block}
+    .form-group{display:flex;flex-direction:column;gap:5px}
+    .form-label{font-size:.75rem;font-weight:600;color:var(--text2);letter-spacing:.03em;text-transform:uppercase}
+    .form-hint{font-size:.74rem;color:var(--muted2);display:flex;align-items:center;gap:4px;margin-top:3px}
+    .form-input{background:var(--subtle);border:1px solid var(--border);border-radius:9px;padding:11px 14px;color:var(--text);font-size:.875rem;font-family:'DM Sans',sans-serif;transition:border-color .2s,box-shadow .2s;width:100%;outline:none}
+    .form-input:focus{border-color:#a855f7;box-shadow:0 0 0 3px rgba(168,85,247,.1);background:var(--card)}
+    .form-input::placeholder{color:var(--muted2)}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .btn-primary{display:inline-flex;align-items:center;gap:7px;padding:11px 22px;border-radius:9px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-size:.88rem;font-weight:700;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;box-shadow:0 2px 6px rgba(168,85,247,.25)}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(168,85,247,.35)}
+    .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+    .btn-ghost{display:inline-flex;align-items:center;gap:7px;padding:11px 20px;border-radius:9px;background:var(--subtle);border:1px solid var(--border);color:var(--text2);font-size:.88rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+    .btn-ghost:hover{background:var(--hover);color:var(--text);border-color:var(--muted2)}
+    .result-panel{display:none;margin-top:24px}
+    .result-header{display:flex;align-items:center;gap:20px;padding:26px;border-radius:14px;margin-bottom:18px}
+    .result-header.low{background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(16,185,129,.02));border:1px solid rgba(16,185,129,.15)}
+    .result-header.moderate{background:linear-gradient(135deg,rgba(245,158,11,.06),rgba(245,158,11,.02));border:1px solid rgba(245,158,11,.15)}
+    .result-header.high{background:linear-gradient(135deg,rgba(239,68,68,.06),rgba(239,68,68,.02));border:1px solid rgba(239,68,68,.15)}
+    .risk-circle{width:88px;height:88px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;border:2px solid currentColor}
+    .risk-circle.low{color:#10b981;background:rgba(16,185,129,.06)}
+    .risk-circle.moderate{color:#f59e0b;background:rgba(245,158,11,.06)}
+    .risk-circle.high{color:#ef4444;background:rgba(239,68,68,.06)}
+    .risk-pct{font-family:'Syne',sans-serif;font-size:1.55rem;font-weight:800;line-height:1}
+    .risk-sub{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;margin-top:2px;opacity:.8}
+    .rec-item{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;background:var(--subtle);border:1px solid var(--border-sub);border-radius:10px}
+    .rec-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+    .progress-track{height:5px;background:var(--subtle);border-radius:99px;overflow:hidden}
+    .progress-fill{height:100%;border-radius:99px;transition:width .8s ease}
+    .flag-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .flag-card{border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;background:var(--card)}
+    .flag-card:hover{border-color:rgba(168,85,247,.3)}
+    .flag-card.selected-yes{border-color:#a855f7;background:rgba(168,85,247,.06)}
+    .flag-card.selected-no{border-color:var(--muted2);background:var(--subtle)}
+
+    /* Explainer */
+    .explain-card{padding:22px;margin-bottom:16px}
+    .explain-head{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:6px}
+    .explain-sub{font-size:.8rem;color:var(--muted2);margin-bottom:18px;line-height:1.55}
+    .explain-item{border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:12px;background:var(--card);position:relative;overflow:hidden}
+    .explain-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+    .explain-item.sev-warn::before{background:#f59e0b}
+    .explain-item.sev-bad::before{background:#ef4444}
+    .explain-item:last-child{margin-bottom:0}
+    .explain-row{display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+    .explain-emoji{font-size:1.4rem;line-height:1}
+    .explain-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;color:var(--text)}
+    .explain-val{font-size:.82rem;font-weight:700;padding:3px 10px;border-radius:20px}
+    .explain-val.warn{background:rgba(245,158,11,.1);color:#d97706;border:1px solid rgba(245,158,11,.25)}
+    .explain-val.bad{background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.25)}
+    .explain-target{font-size:.74rem;color:var(--muted2);margin-bottom:8px;padding-left:30px}
+    .explain-reason{font-size:.82rem;color:var(--text2);line-height:1.6;margin-bottom:8px;padding-left:30px}
+    .explain-tip{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;background:var(--subtle);border-radius:8px;font-size:.8rem;color:var(--text);line-height:1.55}
+    .explain-tip::before{content:"→";color:#a855f7;font-weight:700;flex-shrink:0}
+
+    @media(max-width:640px){.form-grid,.flag-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div style="display:flex;min-height:100vh">
+  <aside class="sidebar"></aside>
+  <div class="main-wrap" style="flex:1;display:flex;flex-direction:column">
+
+    <header class="topbar">
+      <div style="flex:1">
+        <div class="topbar-title">Kidney Disease Assessment</div>
+        <div class="topbar-sub">AI-powered Chronic Kidney Disease (CKD) risk analysis</div>
+      </div>
+    </header>
+
+    <main style="padding:28px 32px;flex:1">
+      <div style="max-width:820px">
+
+        <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 18px;background:rgba(168,85,247,.05);border:1px solid rgba(168,85,247,.18);border-radius:12px;margin-bottom:22px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div style="font-size:.83rem;color:var(--muted);line-height:1.55">This tool uses a <strong style="color:var(--text2)">Random Forest classifier</strong> trained on Chronic Kidney Disease data. Enter values from your most recent blood tests and clinical examination. Results are for <strong style="color:var(--text2)">screening purposes only</strong> — always confirm findings with a nephrologist.</div>
+        </div>
+
+        <div class="step-bar">
+          <button class="step-tab active" id="tab-1" onclick="goStep(1)"><span class="sn">①</span>Patient Info</button>
+          <button class="step-tab" id="tab-2" onclick="goStep(2)"><span class="sn">②</span>Lab Results</button>
+          <button class="step-tab" id="tab-3"><span class="sn">③</span>Results</button>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="step active card" id="step-1" style="padding:26px">
+          <h3 style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:4px">Patient Information</h3>
+          <p style="font-size:.82rem;color:var(--muted2);margin-bottom:24px">Age and existing medical conditions help contextualise kidney function markers</p>
+
+          <div class="form-grid" style="margin-bottom:20px">
+            <div class="form-group">
+              <label class="form-label">Patient Age (years)</label>
+              <input class="form-input" type="number" id="f-age" min="1" max="100" placeholder="45"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Age at time of assessment</span>
+            </div>
+          </div>
+
+          <div style="font-size:.75rem;font-weight:700;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px">Existing Conditions — select Yes or No for each</div>
+          <div class="flag-grid">
+            <div>
+              <div style="font-size:.82rem;font-weight:600;color:var(--text2);margin-bottom:8px">Hypertension (High Blood Pressure)</div>
+              <div style="display:flex;gap:8px">
+                <button class="flag-card" id="htn-yes" onclick="setFlag('htn',1)" style="flex:1;text-align:center;padding:10px">Yes</button>
+                <button class="flag-card selected-no" id="htn-no" onclick="setFlag('htn',0)" style="flex:1;text-align:center;padding:10px">No</button>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:.82rem;font-weight:600;color:var(--text2);margin-bottom:8px">Diabetes Mellitus</div>
+              <div style="display:flex;gap:8px">
+                <button class="flag-card" id="dm-yes" onclick="setFlag('dm',1)" style="flex:1;text-align:center;padding:10px">Yes</button>
+                <button class="flag-card selected-no" id="dm-no" onclick="setFlag('dm',0)" style="flex:1;text-align:center;padding:10px">No</button>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:.82rem;font-weight:600;color:var(--text2);margin-bottom:8px">Pedal Oedema (Ankle Swelling)</div>
+              <div style="display:flex;gap:8px">
+                <button class="flag-card" id="pe-yes" onclick="setFlag('pe',1)" style="flex:1;text-align:center;padding:10px">Yes</button>
+                <button class="flag-card selected-no" id="pe-no" onclick="setFlag('pe',0)" style="flex:1;text-align:center;padding:10px">No</button>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:.82rem;font-weight:600;color:var(--text2);margin-bottom:8px">Anaemia</div>
+              <div style="display:flex;gap:8px">
+                <button class="flag-card" id="ane-yes" onclick="setFlag('ane',1)" style="flex:1;text-align:center;padding:10px">Yes</button>
+                <button class="flag-card selected-no" id="ane-no" onclick="setFlag('ane',0)" style="flex:1;text-align:center;padding:10px">No</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:24px;display:flex;justify-content:flex-end">
+            <button class="btn-primary" onclick="goStep(2)">
+              Next: Lab Results
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step card" id="step-2" style="padding:26px">
+          <h3 style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:4px">Laboratory Results</h3>
+          <p style="font-size:.82rem;color:var(--muted2);margin-bottom:24px">Enter values from your most recent blood panel and urinalysis report</p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Diastolic Blood Pressure (mmHg)</label>
+              <input class="form-input" type="number" id="f-bp" min="50" max="200" placeholder="76"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal range: 60 – 80 mmHg</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Blood Glucose Random (mg/dL)</label>
+              <input class="form-input" type="number" id="f-bgr" min="70" max="500" placeholder="120"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal random: 70 – 140 mg/dL</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Blood Urea (mg/dL)</label>
+              <input class="form-input" type="number" id="f-bu" min="5" max="400" placeholder="35"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal: 7 – 25 mg/dL</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Serum Creatinine (mg/dL)</label>
+              <input class="form-input" type="number" id="f-sc" min="0.4" max="50" step="0.1" placeholder="1.2"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal: 0.6 – 1.2 mg/dL</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sodium (mEq/L)</label>
+              <input class="form-input" type="number" id="f-sod" min="110" max="165" placeholder="138"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal: 136 – 145 mEq/L</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Potassium (mEq/L)</label>
+              <input class="form-input" type="number" id="f-pot" min="2" max="10" step="0.1" placeholder="4.5"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal: 3.5 – 5.0 mEq/L</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Haemoglobin (g/dL)</label>
+              <input class="form-input" type="number" id="f-hemo" min="3" max="18" step="0.1" placeholder="14.5"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal: 12 – 17.5 g/dL</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Packed Cell Volume (%)</label>
+              <input class="form-input" type="number" id="f-pcv" min="9" max="54" placeholder="42"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal: 38 – 50%</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">White Blood Cell Count (cells/μL)</label>
+              <input class="form-input" type="number" id="f-wc" min="3000" max="30000" placeholder="8000"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal: 4,500 – 11,000 cells/μL</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Red Blood Cell Count (millions/μL)</label>
+              <input class="form-input" type="number" id="f-rc" min="1.5" max="7" step="0.1" placeholder="4.8"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal: 4.2 – 5.9 millions/μL</span>
+            </div>
+          </div>
+
+          <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
+            <button class="btn-ghost" onclick="goStep(1)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              Back
+            </button>
+            <button class="btn-primary" id="submit-btn" onclick="runAssessment()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <span id="btn-text">Analyse Kidney Risk</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="result-panel" id="result-panel">
+          <div class="result-header low" id="result-header">
+            <div class="risk-circle low" id="result-circle">
+              <div class="risk-pct" id="result-pct">—</div>
+              <div class="risk-sub">CKD Risk</div>
+            </div>
+            <div style="flex:1">
+              <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--text);margin-bottom:6px" id="result-title">Analysis Complete</div>
+              <div style="font-size:.87rem;color:var(--muted2);margin-bottom:14px;line-height:1.55" id="result-desc"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-ghost" style="padding:8px 14px;font-size:.8rem" onclick="generatePDF()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Download PDF
+                </button>
+                <button class="btn-ghost" style="padding:8px 14px;font-size:.8rem" onclick="newAssessment()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  New Assessment
+                </button>
+                <a href="kidney-records.html" style="text-decoration:none">
+                  <button class="btn-ghost" style="padding:8px 14px;font-size:.8rem">View Kidney History</button>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:22px;margin-bottom:16px">
+            <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:18px">Key Biomarker Breakdown</div>
+            <div id="factor-bars"></div>
+          </div>
+
+          <!-- NEW: Why you got this result -->
+          <div class="card explain-card" id="explain-card" style="display:none">
+            <div class="explain-head">Why you got this result</div>
+            <div class="explain-sub" id="explain-sub"></div>
+            <div id="explain-list"></div>
+          </div>
+
+          <div class="card" style="padding:22px">
+            <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:16px">Clinical Recommendations</div>
+            <div id="recommendations" style="display:flex;flex-direction:column;gap:10px"></div>
+            <div style="margin-top:16px;padding:12px 14px;background:var(--subtle);border-radius:8px;border:1px solid var(--border);font-size:.78rem;color:var(--muted2);line-height:1.6">
+              <strong style="color:var(--text2)">Medical Disclaimer:</strong> This assessment is for informational purposes only and does not constitute medical advice. Always consult a qualified nephrologist or physician before making any health decisions.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="../components/api.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  Auth.requireAuth();
+  buildSidebar("kidney-assessment");
+
+  const flags = { htn: 0, dm: 0, pe: 0, ane: 0 };
+
+  function setFlag(key, val) {
+    flags[key] = val;
+    const yesEl = document.getElementById(`${key}-yes`);
+    const noEl  = document.getElementById(`${key}-no`);
+    yesEl.className = `flag-card ${val === 1 ? "selected-yes" : ""}`;
+    noEl.className  = `flag-card ${val === 0 ? "selected-no"  : ""}`;
+  }
+
+  function goStep(n) {
+    document.querySelectorAll(".step").forEach((s,i) => s.classList.toggle("active", i === n - 1));
+    document.querySelectorAll(".step-tab").forEach((t,i) => t.classList.toggle("active", i === n - 1));
+  }
+
+  let lastResult = null;
+  let lastExplanations = [];
+
+  async function runAssessment() {
+    const age = document.getElementById("f-age").value;
+    if (!age) { Toast.error("Please enter the patient age"); goStep(1); return; }
+
+    const numFields = {
+      blood_pressure:         document.getElementById("f-bp").value,
+      blood_glucose_random:   document.getElementById("f-bgr").value,
+      blood_urea:             document.getElementById("f-bu").value,
+      serum_creatinine:       document.getElementById("f-sc").value,
+      sodium:                 document.getElementById("f-sod").value,
+      potassium:              document.getElementById("f-pot").value,
+      haemoglobin:            document.getElementById("f-hemo").value,
+      packed_cell_volume:     document.getElementById("f-pcv").value,
+      white_blood_cell_count: document.getElementById("f-wc").value,
+      red_blood_cell_count:   document.getElementById("f-rc").value,
+    };
+    for (const [k, v] of Object.entries(numFields)) {
+      if (!v) { Toast.error(`Please complete all lab fields — ${k.replace(/_/g," ")} is missing`); return; }
+    }
+
+    const payload = {
+      age:                    parseFloat(age),
+      ...Object.fromEntries(Object.entries(numFields).map(([k,v]) => [k, parseFloat(v)])),
+      hypertension:           flags.htn,
+      diabetes_mellitus:      flags.dm,
+      pedal_edema:            flags.pe,
+      anemia:                 flags.ane,
+    };
+
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    document.getElementById("btn-text").textContent = "Analysing…";
+
+    try {
+      const data = await apiFetch("/kidney/predict", { method: "POST", body: JSON.stringify(payload) });
+      lastResult = { ...data, ...payload };
+      renderResult(data, payload);
+      goStep(3);
+      document.getElementById("result-panel").style.display = "block";
+      setTimeout(() => document.getElementById("result-panel").scrollIntoView({ behavior:"smooth", block:"start" }), 100);
+    } catch(e) {
+      Toast.error(e.message || "Assessment failed. Please try again.");
+    } finally {
+      btn.disabled = false;
+      document.getElementById("btn-text").textContent = "Analyse Kidney Risk";
+    }
+  }
+
+  // ── Explainer: why this CKD result? ─────────────────────────────────────
+  function buildExplanations(f) {
+    const out = [];
+    const sc   = parseFloat(f.serum_creatinine);
+    const bu   = parseFloat(f.blood_urea);
+    const hb   = parseFloat(f.haemoglobin);
+    const pcv  = parseFloat(f.packed_cell_volume);
+    const na   = parseFloat(f.sodium);
+    const k    = parseFloat(f.potassium);
+    const bgr  = parseFloat(f.blood_glucose_random);
+    const rbc  = parseFloat(f.red_blood_cell_count);
+    const bp   = parseFloat(f.blood_pressure);
+    const age  = parseFloat(f.age);
+
+    // Serum creatinine — the headline kidney marker
+    if (sc > 3.0) {
+      out.push({ sev:"bad", emoji:"🧪", title:"Severely elevated serum creatinine",
+        value:`${sc} mg/dL`, target:"Normal 0.6–1.2 mg/dL",
+        reason:"Very high creatinine strongly suggests advanced impairment of glomerular filtration, consistent with stage 4–5 CKD.",
+        tip:"Seek nephrology evaluation within 72 hours; request an eGFR calculation and kidney ultrasound." });
+    } else if (sc > 1.4) {
+      out.push({ sev:"bad", emoji:"🧪", title:"Elevated serum creatinine",
+        value:`${sc} mg/dL`, target:"Normal 0.6–1.2 mg/dL",
+        reason:"Rising creatinine indicates the kidneys are clearing waste less efficiently — a primary marker of reduced filtration.",
+        tip:"Ask your physician for an eGFR and urine albumin-to-creatinine ratio to stage kidney function properly." });
+    } else if (sc > 1.2) {
+      out.push({ sev:"warn", emoji:"🧪", title:"Borderline creatinine",
+        value:`${sc} mg/dL`, target:"Normal 0.6–1.2 mg/dL",
+        reason:"Mildly elevated creatinine can signal early renal stress, particularly when combined with other risk factors.",
+        tip:"Recheck creatinine in 4–6 weeks, stay well hydrated, and avoid NSAIDs like ibuprofen." });
+    }
+
+    // Blood urea
+    if (bu > 60) {
+      out.push({ sev:"bad", emoji:"⚗️", title:"Markedly elevated blood urea",
+        value:`${bu} mg/dL`, target:"Normal 7–25 mg/dL",
+        reason:"High urea (azotemia) indicates significant reduction in kidney waste-clearing capacity and often accompanies advanced CKD.",
+        tip:"Urgent clinical review is warranted; a low-protein diet may be recommended by your nephrologist." });
+    } else if (bu > 25) {
+      out.push({ sev:"warn", emoji:"⚗️", title:"Elevated blood urea",
+        value:`${bu} mg/dL`, target:"Normal 7–25 mg/dL",
+        reason:"Raised urea reflects impaired nitrogen-waste clearance and is an early indicator of kidney dysfunction.",
+        tip:"Reduce red-meat intake, stay hydrated, and schedule repeat testing within 4 weeks." });
+    }
+
+    // Haemoglobin (renal anaemia is a classic CKD complication)
+    if (hb < 9) {
+      out.push({ sev:"bad", emoji:"🩸", title:"Severe anaemia",
+        value:`${hb} g/dL`, target:"Normal 12–17.5 g/dL",
+        reason:"Severe anaemia in the context of kidney dysfunction typically reflects impaired erythropoietin production — a hallmark of established CKD.",
+        tip:"Discuss erythropoiesis-stimulating agents and iron supplementation with your nephrologist." });
+    } else if (hb < 12) {
+      out.push({ sev:"warn", emoji:"🩸", title:"Low haemoglobin (anaemia)",
+        value:`${hb} g/dL`, target:"Normal 12–17.5 g/dL",
+        reason:"Anaemia is common in CKD because damaged kidneys produce less erythropoietin, the hormone that signals red-cell production.",
+        tip:"Request an iron studies panel and ferritin; dietary iron plus B12/folate may help correct mild cases." });
+    }
+
+        // Packed cell volume
+    if (pcv < 30) {
+      out.push({ sev:"bad", emoji:"🔬", title:"Very low packed cell volume",
+        value:`${pcv}%`, target:"Normal 38–50%",
+        reason:"A haematocrit this low confirms significant anaemia and reduced oxygen-carrying capacity, frequently seen in moderate-to-severe CKD.",
+        tip:"This result should be correlated with haemoglobin and iron studies — discuss with your physician urgently." });
+    } else if (pcv < 38) {
+      out.push({ sev:"warn", emoji:"🔬", title:"Reduced packed cell volume",
+        value:`${pcv}%`, target:"Normal 38–50%",
+        reason:"A slightly low haematocrit supports the anaemia pattern commonly observed alongside declining kidney function.",
+        tip:"Full blood count and iron panel within a month will clarify whether treatment is needed." });
+    }
+
+    // Sodium — CKD disrupts electrolyte balance both ways
+    if (!isNaN(na) && na < 135) {
+      out.push({ sev:"warn", emoji:"🧂", title:"Low sodium (hyponatraemia)",
+        value:`${na} mEq/L`, target:"Normal 136–145 mEq/L",
+        reason:"Failing kidneys struggle to regulate sodium and water balance. Hyponatraemia can cause confusion, weakness, and increased fall risk.",
+        tip:"Review diuretic use with your doctor and avoid excessive plain-water intake without electrolytes." });
+    } else if (!isNaN(na) && na > 145) {
+      out.push({ sev:"warn", emoji:"🧂", title:"High sodium (hypernatraemia)",
+        value:`${na} mEq/L`, target:"Normal 136–145 mEq/L",
+        reason:"Elevated sodium usually reflects dehydration or impaired renal water handling in CKD.",
+        tip:"Increase plain water gradually and cut back on processed/salty foods." });
+    }
+
+    // Potassium — the most dangerous electrolyte in CKD
+    if (k > 5.5) {
+      out.push({ sev:"bad", emoji:"⚡", title:"Hyperkalaemia — dangerous potassium level",
+        value:`${k} mEq/L`, target:"Normal 3.5–5.0 mEq/L",
+        reason:"Kidneys are the main route of potassium excretion. Levels above 5.5 can trigger life-threatening cardiac arrhythmias.",
+        tip:"Seek urgent medical review. Avoid bananas, oranges, potatoes and tomatoes until your potassium is rechecked." });
+    } else if (k > 5.0) {
+      out.push({ sev:"warn", emoji:"⚡", title:"Mildly elevated potassium",
+        value:`${k} mEq/L`, target:"Normal 3.5–5.0 mEq/L",
+        reason:"Even small elevations in potassium are an early warning that the kidneys are not excreting it efficiently.",
+        tip:"Limit potassium-rich foods and recheck within 2–4 weeks with your doctor." });
+    } else if (k < 3.5) {
+      out.push({ sev:"warn", emoji:"⚡", title:"Low potassium (hypokalaemia)",
+        value:`${k} mEq/L`, target:"Normal 3.5–5.0 mEq/L",
+        reason:"Low potassium may result from diuretic use or GI losses and can cause muscle weakness and arrhythmias.",
+        tip:"Discuss your diuretic dosing with your physician; potassium-rich foods may be recommended if safe for you." });
+    }
+
+    // Blood glucose random — diabetes is the #1 cause of CKD
+    if (bgr > 200) {
+      out.push({ sev:"bad", emoji:"🍬", title:"Very high random blood glucose",
+        value:`${bgr} mg/dL`, target:"Normal ≤140 mg/dL",
+        reason:"Diabetic nephropathy is the leading cause of end-stage kidney disease worldwide. Persistent hyperglycaemia damages the kidney's filtering units.",
+        tip:"Aim for tight glycaemic control (HbA1c ~7%). Ask about SGLT2 inhibitors — they independently protect kidneys in diabetic CKD." });
+    } else if (bgr > 140) {
+      out.push({ sev:"warn", emoji:"🍬", title:"Elevated random blood glucose",
+        value:`${bgr} mg/dL`, target:"Normal ≤140 mg/dL",
+        reason:"Even borderline hyperglycaemia accelerates small-vessel damage in the kidneys over years.",
+        tip:"Request HbA1c and fasting glucose tests; reduce refined carbs and add 30 minutes of daily activity." });
+    }
+
+    // Red blood cell count
+    if (!isNaN(rbc) && rbc < 4.2) {
+      out.push({ sev:"warn", emoji:"🔴", title:"Low red blood cell count",
+        value:`${rbc} M/μL`, target:"Normal 4.2–5.9 M/μL",
+        reason:"A low RBC count reinforces the anaemia picture seen in CKD due to reduced erythropoietin production.",
+        tip:"Combined with low haemoglobin, this strengthens the case for a nephrology referral and iron studies." });
+    }
+
+    // Diastolic BP — tighter CKD target
+    if (bp > 90) {
+      out.push({ sev:"bad", emoji:"💓", title:"High diastolic blood pressure",
+        value:`${bp} mmHg`, target:"CKD target ≤80 mmHg",
+        reason:"Hypertension damages the small blood vessels in the kidneys and is both a cause and a consequence of CKD.",
+        tip:"Target <130/80. ACE inhibitors or ARBs are first-line in CKD — they protect kidneys beyond just lowering BP." });
+    } else if (bp > 80) {
+      out.push({ sev:"warn", emoji:"💓", title:"Diastolic BP above CKD target",
+        value:`${bp} mmHg`, target:"CKD target ≤80 mmHg",
+        reason:"For patients with CKD risk, a stricter BP target preserves remaining kidney function.",
+        tip:"Reduce salt, exercise regularly, and discuss BP medication with your physician if lifestyle measures don't reach target." });
+    }
+
+    // Age
+    if (age >= 60) {
+      out.push({ sev:"warn", emoji:"📅", title:"Age-related kidney function decline",
+        value:`${age} years`, target:"Higher screening priority ≥60",
+        reason:"eGFR naturally declines about 1 mL/min/year after age 40. Older adults are at higher risk of silent CKD.",
+        tip:"Annual creatinine + urine albumin-to-creatinine screening is recommended after 60." });
+    }
+
+    // Comorbidity flags — strong CKD accelerators
+    if (f.hypertension) {
+      out.push({ sev:"warn", emoji:"🫀", title:"Known hypertension",
+        value:"Diagnosed", target:"BP <130/80",
+        reason:"Hypertension is the #2 cause of CKD globally. Poorly controlled BP significantly accelerates kidney damage.",
+        tip:"Monitor BP at home daily. Discuss ACE inhibitors or ARBs with your doctor — both are kidney-protective." });
+    }
+    if (f.diabetes_mellitus) {
+      out.push({ sev:"bad", emoji:"🩺", title:"Known diabetes mellitus",
+        value:"Diagnosed", target:"HbA1c ~7%",
+        reason:"Diabetic nephropathy is the #1 cause of end-stage kidney disease. Every 1% drop in HbA1c meaningfully reduces kidney complications.",
+        tip:"Ask about SGLT2 inhibitors or GLP-1 agonists — both slow diabetic CKD progression independent of glucose control." });
+    }
+    if (f.pedal_edema) {
+      out.push({ sev:"warn", emoji:"🦶", title:"Pedal oedema present",
+        value:"Ankle swelling reported", target:"Should resolve with treatment",
+        reason:"Swelling of the ankles can indicate fluid retention from impaired kidney filtration or protein loss through the urine (nephrotic syndrome).",
+        tip:"Reduce salt intake, elevate legs when resting, and request a urine protein test with your physician." });
+    }
+    if (f.anemia) {
+      out.push({ sev:"warn", emoji:"🩸", title:"Known anaemia",
+        value:"Previously diagnosed", target:"Hb ≥12 g/dL",
+        reason:"Anaemia frequently accompanies CKD and worsens outcomes by reducing oxygen delivery to vital organs.",
+        tip:"Ensure regular iron, B12 and folate checks. Treating anaemia improves energy and slows CKD progression." });
+    }
+
+    return out;
+  }
+
+  function renderExplanations(exps, risk) {
+    const card = document.getElementById("explain-card");
+    const list = document.getElementById("explain-list");
+    const sub  = document.getElementById("explain-sub");
+
+    if (!exps.length || risk === "Low") {
+      card.style.display = "none";
+      list.innerHTML = "";
+      return;
+    }
+
+    card.style.display = "block";
+    sub.textContent = `We identified ${exps.length} factor${exps.length>1?"s":""} from your inputs that pushed your CKD risk higher. Each item below explains the clinical reasoning and a practical next step.`;
+
+    list.innerHTML = exps.map(e => `
+      <div class="explain-item sev-${e.sev}">
+        <div class="explain-row">
+          <span class="explain-emoji">${e.emoji}</span>
+          <span class="explain-title">${e.title}</span>
+          <span class="explain-val ${e.sev}">${e.value}</span>
+        </div>
+        <div class="explain-target">${e.target}</div>
+        <div class="explain-reason">${e.reason}</div>
+        <div class="explain-tip">${e.tip}</div>
+      </div>`).join("");
+  }
+
+  // ── Render results ────────────────────────────────────────────────────────
+  function renderResult(data, fields) {
+    const risk = data.risk_level;
+    const pct  = data.probability;
+    const cls  = risk.toLowerCase();
+
+    document.getElementById("result-header").className = `result-header ${cls}`;
+    document.getElementById("result-circle").className = `risk-circle ${cls}`;
+    document.getElementById("result-pct").textContent  = pct + "%";
+
+    const titles = {
+      Low:      "Low CKD Risk Detected",
+      Moderate: "Moderate CKD Risk Detected",
+      High:     "Elevated CKD Risk Detected",
+    };
+    const descs = {
+      Low:      "Your kidney biomarkers are within or near normal ranges. Maintain a kidney-friendly lifestyle and attend routine annual check-ups.",
+      Moderate: "Some biomarkers suggest potential kidney stress. Closer monitoring and lifestyle adjustments are strongly recommended.",
+      High:     "Several biomarkers indicate a significantly elevated CKD risk. Please consult a nephrologist at your earliest opportunity.",
+    };
+    document.getElementById("result-title").textContent = titles[risk];
+    document.getElementById("result-desc").textContent  = descs[risk];
+
+    const factors = [
+      { l:"Serum Creatinine",      v: fields.serum_creatinine,       max:15,  normal:1.2, unit:"mg/dL", higherWorse:true  },
+      { l:"Blood Urea",            v: fields.blood_urea,             max:200, normal:25,  unit:"mg/dL", higherWorse:true  },
+      { l:"Haemoglobin",           v: fields.haemoglobin,            max:18,  normal:12,  unit:"g/dL",  higherWorse:false },
+      { l:"Packed Cell Volume",    v: fields.packed_cell_volume,     max:55,  normal:38,  unit:"%",     higherWorse:false },
+      { l:"Blood Glucose Random",  v: fields.blood_glucose_random,   max:400, normal:140, unit:"mg/dL", higherWorse:true  },
+      { l:"Red Blood Cell Count",  v: fields.red_blood_cell_count,   max:7,   normal:4.2, unit:"M/μL",  higherWorse:false },
+    ];
+
+    document.getElementById("factor-bars").innerHTML = factors.map(f => {
+      const pct2 = Math.min((f.v / f.max) * 100, 100);
+      const abnormal = f.higherWorse ? f.v > f.normal : f.v < f.normal;
+      const color = abnormal ? "#f59e0b" : "#10b981";
+      const label = abnormal ? (f.higherWorse ? "Above normal" : "Below normal") : "";
+      return `
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:.82rem;font-weight:600;color:var(--text2)">${f.l}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:.8rem;font-weight:600;color:${color}">${f.v} ${f.unit}</span>
+              <span style="font-size:.7rem;color:var(--muted2)">Normal ${f.higherWorse ? "≤" : "≥"} ${f.normal}</span>
+              ${abnormal ? `<span style="font-size:.68rem;background:rgba(245,158,11,.08);color:#d97706;padding:2px 7px;border-radius:20px;border:1px solid rgba(245,158,11,.2)">${label}</span>` : ""}
+            </div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:${pct2}%;background:${color}"></div></div>
+        </div>`;
+    }).join("");
+
+    const recs = {
+      Low: [
+        { icon:"💧", title:"Stay well hydrated", desc:"Aim for 2–3 litres of water daily to support kidney filtration and prevent stone formation.", bg:"rgba(16,185,129,.06)" },
+        { icon:"🥗", title:"Follow a kidney-friendly diet", desc:"Limit sodium, processed foods, and red meat. Prioritise fruits, vegetables, and whole grains.", bg:"rgba(16,185,129,.06)" },
+        { icon:"📅", title:"Annual kidney function tests", desc:"Even with low risk, yearly creatinine, eGFR, and urinalysis checks are recommended for early detection.", bg:"rgba(16,185,129,.06)" },
+      ],
+      Moderate: [
+        { icon:"🩺", title:"Schedule a nephrology review", desc:"Consult your physician within 2–4 weeks for a formal kidney function evaluation, including eGFR.", bg:"rgba(245,158,11,.06)" },
+        { icon:"🧂", title:"Reduce dietary sodium and protein", desc:"A low-protein, low-sodium diet significantly reduces the burden on damaged kidneys.", bg:"rgba(245,158,11,.06)" },
+        { icon:"💊", title:"Manage underlying conditions", desc:"Controlling blood pressure and blood glucose slows CKD progression in diabetic and hypertensive patients.", bg:"rgba(245,158,11,.06)" },
+        { icon:"📊", title:"Regular creatinine & eGFR monitoring", desc:"Track kidney function every 3–6 months. An eGFR below 60 for 3+ months confirms CKD.", bg:"rgba(245,158,11,.06)" },
+      ],
+      High: [
+        { icon:"🚨", title:"See a nephrologist urgently", desc:"Please book an appointment with a kidney specialist within the next 7 days for further investigation.", bg:"rgba(239,68,68,.06)" },
+        { icon:"🏥", title:"Complete kidney function panel", desc:"Request eGFR, urine albumin-to-creatinine ratio, kidney ultrasound, and electrolyte panel.", bg:"rgba(239,68,68,.06)" },
+        { icon:"🚫", title:"Avoid nephrotoxic substances", desc:"Stop NSAIDs (ibuprofen), contrast dyes, and herbal supplements without specialist clearance.", bg:"rgba(239,68,68,.06)" },
+        { icon:"📉", title:"Aggressively manage comorbidities", desc:"Strict blood pressure control (target <130/80) and diabetes management are critical to preserving residual kidney function.", bg:"rgba(239,68,68,.06)" },
+      ],
+    };
+
+    document.getElementById("recommendations").innerHTML = (recs[risk] || recs.Low).map(r => `
+      <div class="rec-item">
+        <div class="rec-icon" style="background:${r.bg}">${r.icon}</div>
+        <div>
+          <div style="font-size:.86rem;font-weight:600;color:var(--text);margin-bottom:3px">${r.title}</div>
+          <div style="font-size:.8rem;color:var(--muted2);line-height:1.55">${r.desc}</div>
+        </div>
+      </div>`).join("");
+
+    // Why you got this result
+    lastExplanations = buildExplanations(fields);
+    renderExplanations(lastExplanations, risk);
+  }
+
+  // ── PDF export ────────────────────────────────────────────────────────────
+  function generatePDF() {
+    if (!lastResult) { Toast.error("No result to export"); return; }
+    const { jsPDF } = window.jspdf;
+    const doc  = new jsPDF();
+    const user = Auth.getUser();
+
+    doc.setFillColor(248,250,252); doc.rect(0,0,210,297,"F");
+    doc.setFillColor(255,255,255); doc.rect(0,0,210,44,"F");
+    doc.setDrawColor(226,232,240); doc.line(0,44,210,44);
+
+    doc.setTextColor(168,85,247); doc.setFontSize(20); doc.setFont("helvetica","bold"); doc.text("GlucoSense",14,18);
+    doc.setFontSize(8); doc.setTextColor(148,163,184); doc.text("KIDNEY DISEASE INTELLIGENCE PLATFORM",14,25);
+    doc.setFontSize(10); doc.setTextColor(15,23,42); doc.text("Kidney Disease Risk Assessment Report",14,34);
+    doc.setTextColor(148,163,184); doc.setFontSize(8); doc.text(`Generated: ${new Date().toLocaleString()}`,14,44);
+
+    doc.setTextColor(15,23,42); doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.text("PATIENT INFORMATION",14,58);
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(71,85,105);
+    doc.text(`Name: ${user?.full_name || "—"}`,14,66);
+    doc.text(`Age: ${lastResult.age || "—"}`,14,73);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`,14,80);
+
+    doc.setTextColor(15,23,42); doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.text("CLINICAL PARAMETERS",14,94);
+    const params = [
+      ["Blood Pressure (mmHg)",    lastResult.blood_pressure],
+      ["Blood Glucose Random",     lastResult.blood_glucose_random],
+      ["Blood Urea (mg/dL)",       lastResult.blood_urea],
+      ["Serum Creatinine (mg/dL)", lastResult.serum_creatinine],
+      ["Sodium (mEq/L)",           lastResult.sodium],
+      ["Potassium (mEq/L)",        lastResult.potassium],
+      ["Haemoglobin (g/dL)",       lastResult.haemoglobin],
+      ["Packed Cell Volume (%)",   lastResult.packed_cell_volume],
+      ["WBC Count (cells/μL)",     lastResult.white_blood_cell_count],
+      ["RBC Count (M/μL)",         lastResult.red_blood_cell_count],
+      ["Hypertension",             lastResult.hypertension ? "Yes" : "No"],
+      ["Diabetes Mellitus",        lastResult.diabetes_mellitus ? "Yes" : "No"],
+      ["Pedal Oedema",             lastResult.pedal_edema ? "Yes" : "No"],
+      ["Anaemia",                  lastResult.anemia ? "Yes" : "No"],
+    ];
+    doc.setFont("helvetica","normal"); doc.setFontSize(9);
+    params.forEach(([k,v],i)=>{
+      doc.setTextColor(71,85,105); doc.text(k+":",14,102+i*8);
+      doc.setTextColor(15,23,42);  doc.text(String(v),120,102+i*8);
+    });
+
+    const rc = {Low:[16,185,129],Moderate:[245,158,11],High:[239,68,68]}[lastResult.risk_level]||[16,185,129];
+    const yStart = 102 + params.length * 8 + 8;
+    doc.setFillColor(...rc);
+    doc.roundedRect(14, yStart, 182, 26, 4, 4, "F");
+    doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text(`CKD RISK: ${lastResult.risk_level.toUpperCase()} — ${lastResult.probability}%`, 105, yStart+12, {align:"center"});
+    doc.setFontSize(8); doc.text("Based on a Random Forest classifier. Consult a nephrologist.", 105, yStart+21, {align:"center"});
+
+    // CONTRIBUTING FACTORS (Why you got this result)
+    let cursorY = yStart + 36;
+    if (lastExplanations.length && lastResult.risk_level !== "Low") {
+      if (cursorY > 240) { doc.addPage(); doc.setFillColor(248,250,252); doc.rect(0,0,210,297,"F"); cursorY = 20; }
+      doc.setTextColor(15,23,42); doc.setFont("helvetica","bold"); doc.setFontSize(10);
+      doc.text("CONTRIBUTING FACTORS — Why you got this result", 14, cursorY);
+      cursorY += 8;
+
+      lastExplanations.forEach(e => {
+        if (cursorY > 255) { doc.addPage(); doc.setFillColor(248,250,252); doc.rect(0,0,210,297,"F"); cursorY = 20; }
+        const col = e.sev === "bad" ? [239,68,68] : [245,158,11];
+        doc.setFillColor(...col); doc.rect(14, cursorY - 3, 2, 20, "F");
+        doc.setTextColor(15,23,42); doc.setFont("helvetica","bold"); doc.setFontSize(9);
+        doc.text(e.title, 20, cursorY + 1);
+        doc.setTextColor(100,116,139); doc.setFont("helvetica","normal"); doc.setFontSize(8);
+        doc.text(`${e.value} · ${e.target}`, 20, cursorY + 6);
+        doc.setTextColor(71,85,105);
+        const reasonLines = doc.splitTextToSize(e.reason, 175);
+        doc.text(reasonLines, 20, cursorY + 11);
+        cursorY += 11 + reasonLines.length * 4;
+        doc.setTextColor(124,58,237); doc.setFont("helvetica","bold");
+        const tipLines = doc.splitTextToSize("→ " + e.tip, 175);
+        doc.text(tipLines, 20, cursorY);
+        cursorY += tipLines.length * 4 + 6;
+        doc.setFont("helvetica","normal");
+      });
+    }
+
+    doc.setTextColor(148,163,184); doc.setFontSize(7); doc.setFont("helvetica","normal");
+    doc.text("This report is for informational purposes only and does not constitute medical advice.",14,287);
+
+    doc.save(`GlucoSense_Kidney_Assessment_${new Date().toISOString().split("T")[0]}.pdf`);
+    Toast.success("PDF report downloaded successfully");
+  }
+
+  function newAssessment() {
+    document.getElementById("result-panel").style.display = "none";
+    document.getElementById("explain-card").style.display = "none";
+    document.getElementById("explain-list").innerHTML = "";
+    lastExplanations = [];
+    document.querySelectorAll(".form-input").forEach(i => i.value = "");
+    flags.htn = 0; flags.dm = 0; flags.pe = 0; flags.ane = 0;
+    ["htn","dm","pe","ane"].forEach(k => {
+      document.getElementById(`${k}-yes`).className = "flag-card";
+      document.getElementById(`${k}-no`).className  = "flag-card selected-no";
+    });
+    goStep(1);
+    window.scrollTo({ top:0, behavior:"smooth" });
+  }
+</script>
+</body>
+</html>
+
+  

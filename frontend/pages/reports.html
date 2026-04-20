@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>GlucoSense — Medical Documents</title>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('gs_theme')||'light')</script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../assets/css/global.css"/>
+  <style>
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;transition:background .25s,border-color .25s;}
+    .card-hd{padding:18px 22px;border-bottom:1px solid var(--border-sub);}
+    .card-title{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--text);}
+    .card-sub{font-size:.75rem;color:var(--muted2);margin-top:2px;}
+    .drop-zone{border:2px dashed var(--border);border-radius:12px;padding:44px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--subtle);}
+    .drop-zone:hover,.drop-zone.dragging{border-color:rgba(14,165,233,.4);background:rgba(14,165,233,.03);}
+    .btn-primary{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:8px;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;font-size:.85rem;font-weight:700;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;width:100%;justify-content:center;box-shadow:0 2px 6px rgba(14,165,233,.2);}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(14,165,233,.3);}
+    .btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:7px;background:var(--subtle);border:1px solid var(--border);color:var(--text2);font-size:.8rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+    .btn-ghost:hover{background:var(--hover);color:var(--text);border-color:var(--muted2);}
+    .btn-danger{display:inline-flex;align-items:center;padding:7px 11px;border-radius:7px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);color:#ef4444;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+    .btn-danger:hover{background:rgba(239,68,68,.12);}
+    .file-row{display:flex;align-items:center;gap:13px;padding:13px 20px;border-bottom:1px solid var(--border-sub);transition:background .15s;}
+    .file-row:last-child{border-bottom:none;}
+    .file-row:hover{background:var(--hover);}
+    .file-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem;}
+    .fi-pdf{background:rgba(239,68,68,.08);color:#ef4444;}
+    .fi-img{background:rgba(14,165,233,.08);color:#0ea5e9;}
+    .fi-doc{background:rgba(129,140,248,.08);color:#818cf8;}
+    .fi-txt{background:rgba(16,185,129,.08);color:#10b981;}
+    .progress-track{height:3px;background:var(--border-sub);border-radius:99px;overflow:hidden;}
+    .progress-fill{height:100%;background:linear-gradient(90deg,#0ea5e9,#10b981);border-radius:99px;transition:width .25s;}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+    .upload-preview{background:var(--subtle);border:1px solid var(--border);border-radius:10px;padding:13px 14px;}
+    @media(max-width:900px){.two-col{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar"></aside>
+  <div class="main-wrap">
+
+    <header class="topbar">
+      <button class="mobile-toggle" id="mob-toggle">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div style="flex:1">
+        <div class="topbar-title">Medical Documents</div>
+        <div class="topbar-sub">Securely upload and manage your medical files</div>
+      </div>
+      <span style="font-size:.75rem;color:var(--muted2);">PDF · JPG · PNG · DOC · TXT &nbsp;·&nbsp; Max 16 MB</span>
+    </header>
+
+    <main style="padding:28px 32px;flex:1;">
+      <div class="two-col">
+
+        <!-- Upload column -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Upload Document</div><div class="card-sub">Drag & drop or click to browse</div></div>
+            <div style="padding:20px 22px;">
+              <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                <div id="dz-icon" style="margin-bottom:12px;">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto;display:block;color:var(--muted2);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </div>
+                <div id="dz-title" style="font-size:.88rem;font-weight:600;color:var(--text2);margin-bottom:5px;">Drop your file here or click to browse</div>
+                <div id="dz-sub" style="font-size:.78rem;color:var(--muted2);">PDF, PNG, JPG, DOC, TXT — up to 16 MB</div>
+                <input type="file" id="file-input" style="display:none;" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt" onchange="handleFileSelect(this)"/>
+              </div>
+
+              <div id="upload-progress" style="display:none;margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:6px;">
+                  <span id="upload-filename" style="color:var(--text2);">Uploading…</span>
+                  <span id="upload-pct" style="color:#0ea5e9;font-weight:600;">0%</span>
+                </div>
+                <div class="progress-track"><div class="progress-fill" id="upload-bar" style="width:0%;"></div></div>
+              </div>
+
+              <div id="upload-preview" style="display:none;margin-top:14px;" class="upload-preview">
+                <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px;">
+                  <div id="preview-icon" style="font-size:1.4rem;">📄</div>
+                  <div style="flex:1;min-width:0;">
+                    <div id="preview-name" style="font-size:.85rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</div>
+                    <div id="preview-size" style="font-size:.73rem;color:var(--muted2);margin-top:1px;">—</div>
+                  </div>
+                  <button class="btn-ghost" style="padding:5px 9px;flex-shrink:0;" onclick="clearPreview()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+                <button class="btn-primary" onclick="uploadFile()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span id="upload-btn-text">Upload File</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Guidelines -->
+          <div class="card" style="padding:20px 22px;border-color:rgba(14,165,233,.12);">
+            <div style="font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Accepted Documents
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px;font-size:.82rem;color:var(--muted);">
+              <div style="display:flex;align-items:center;gap:8px;"><span style="color:#10b981;font-weight:700;">✓</span> Laboratory results and blood glucose reports</div>
+              <div style="display:flex;align-items:center;gap:8px;"><span style="color:#10b981;font-weight:700;">✓</span> Physician notes and consultation summaries</div>
+              <div style="display:flex;align-items:center;gap:8px;"><span style="color:#10b981;font-weight:700;">✓</span> Radiology and diagnostic imaging reports</div>
+              <div style="display:flex;align-items:center;gap:8px;"><span style="color:#10b981;font-weight:700;">✓</span> Prescription and medication records</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px;padding-top:10px;border-top:1px solid var(--border-sub);">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted2);flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span style="color:var(--muted2);">Files are private — only you can access them</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- File library -->
+        <div class="card" style="overflow:hidden;">
+          <div class="card-hd" style="display:flex;align-items:center;justify-content:space-between;">
+            <div><div class="card-title">My Documents</div><div class="card-sub" id="file-count">Loading…</div></div>
+            <button class="btn-ghost" onclick="loadFiles()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </button>
+          </div>
+          <div id="file-list" style="min-height:200px;">
+            <div style="display:flex;align-items:center;justify-content:center;padding:60px 20px;color:var(--muted2);flex-direction:column;gap:10px;">
+              <div class="spin" style="width:20px;height:20px;border:2px solid var(--border);border-top-color:#0ea5e9;border-radius:50%;"></div>
+              <span style="font-size:.82rem;">Loading files…</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="../components/api.js"></script>
+<script>
+  Auth.requireAuth();
+  buildSidebar("reports");
+  let selectedFile = null;
+
+  const dz = document.getElementById("drop-zone");
+  dz.addEventListener("dragover",  e => { e.preventDefault(); dz.classList.add("dragging"); });
+  dz.addEventListener("dragleave", () => dz.classList.remove("dragging"));
+  dz.addEventListener("drop", e => {
+    e.preventDefault(); dz.classList.remove("dragging");
+    const f = e.dataTransfer.files[0];
+    if (f) previewFile(f);
+  });
+
+  function handleFileSelect(input) { if (input.files[0]) previewFile(input.files[0]); }
+
+  function previewFile(file) {
+    selectedFile = file;
+    const ext = file.name.split(".").pop().toLowerCase();
+    const icons = { pdf:"📄", png:"🖼", jpg:"🖼", jpeg:"🖼", doc:"📝", docx:"📝", txt:"📃" };
+    document.getElementById("preview-icon").textContent = icons[ext]||"📄";
+    document.getElementById("preview-name").textContent = file.name;
+    document.getElementById("preview-size").textContent = formatFileSize(file.size);
+    document.getElementById("upload-preview").style.display = "block";
+    document.getElementById("dz-icon").innerHTML = `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto;display:block"><polyline points="20 6 9 17 4 12"/></svg>`;
+    document.getElementById("dz-title").textContent = "File selected";
+    document.getElementById("dz-sub").textContent   = "Click Upload to save to your library";
+  }
+
+  function clearPreview() {
+    selectedFile = null;
+    document.getElementById("upload-preview").style.display = "none";
+    document.getElementById("dz-icon").innerHTML = `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto;display:block;color:var(--muted2);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
+    document.getElementById("dz-title").textContent = "Drop your file here or click to browse";
+    document.getElementById("dz-sub").textContent   = "PDF, PNG, JPG, DOC, TXT — up to 16 MB";
+    document.getElementById("file-input").value = "";
+  }
+
+  async function uploadFile() {
+    if (!selectedFile) { Toast.error("No file selected"); return; }
+    const btnText = document.getElementById("upload-btn-text");
+    btnText.textContent = "Uploading…";
+    document.getElementById("upload-progress").style.display = "block";
+    document.getElementById("upload-filename").textContent = selectedFile.name;
+    let pct = 0;
+    const iv = setInterval(() => {
+      pct = Math.min(pct+8, 85);
+      document.getElementById("upload-bar").style.width = pct+"%";
+      document.getElementById("upload-pct").textContent = pct+"%";
+    }, 150);
+    try {
+      const fd = new FormData();
+      fd.append("file", selectedFile);
+      await apiUpload("/reports/upload", fd);
+      clearInterval(iv);
+      document.getElementById("upload-bar").style.width = "100%";
+      document.getElementById("upload-pct").textContent = "100%";
+      setTimeout(() => { document.getElementById("upload-progress").style.display = "none"; }, 600);
+      Toast.success("Document uploaded successfully");
+      clearPreview(); loadFiles();
+    } catch(e) {
+      clearInterval(iv);
+      Toast.error(e.message||"Upload failed");
+    } finally { btnText.textContent = "Upload File"; }
+  }
+
+  async function loadFiles() {
+    const list = document.getElementById("file-list");
+    try {
+      const files = await apiFetch("/reports/");
+      document.getElementById("file-count").textContent = `${files.length} document${files.length!==1?"s":""} stored`;
+      if (!files.length) {
+        list.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--muted2);">
+          <div style="margin-bottom:12px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto;display:block;opacity:.4;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div style="font-family:'Syne',sans-serif;font-size:.9rem;color:var(--text2);margin-bottom:6px;">No documents yet</div>
+          <div style="font-size:.82rem;">Upload your first medical document using the panel on the left</div>
+        </div>`;
+        return;
+      }
+      const extCls = { pdf:"fi-pdf", png:"fi-img", jpg:"fi-img", jpeg:"fi-img", doc:"fi-doc", docx:"fi-doc", txt:"fi-txt" };
+      const extIco = { pdf:"📄", png:"🖼", jpg:"🖼", jpeg:"🖼", doc:"📝", docx:"📝", txt:"📃" };
+      list.innerHTML = files.map(f => {
+        const ext = f.file_type||"";
+        return `
+          <div class="file-row">
+            <div class="file-icon ${extCls[ext]||"fi-txt"}">${extIco[ext]||"📄"}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:.85rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.original_name}</div>
+              <div style="font-size:.73rem;color:var(--muted2);margin-top:2px;">${formatFileSize(f.file_size||0)} · ${formatDate(f.created_at)}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              <button class="btn-ghost" onclick="downloadFile(${f.id},${JSON.stringify(f.original_name)})">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download
+              </button>
+              <button class="btn-danger" onclick="deleteFile(${f.id})">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              </button>
+            </div>
+          </div>`;
+      }).join("");
+    } catch(e) {
+      list.innerHTML = `<div style="text-align:center;padding:48px;color:#ef4444;font-size:.84rem;">Failed to load documents. Please refresh.</div>`;
+    }
+  }
+
+  async function downloadFile(id, name) {
+    try {
+      const token = Auth.getToken();
+      const res = await fetch(`${API_BASE}/reports/download/${id}`,{headers:{Authorization:`Bearer ${token}`}});
+      if (!res.ok) { Toast.error("Download failed"); return; }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href=url; a.download=name; a.click();
+      URL.revokeObjectURL(url);
+    } catch(e) { Toast.error("Download failed"); }
+  }
+
+  async function deleteFile(id) {
+    if (!confirm("Permanently delete this document?")) return;
+    try {
+      await apiFetch(`/reports/${id}`,{method:"DELETE"});
+      Toast.success("Document deleted");
+      loadFiles();
+    } catch(e) { Toast.error(e.message); }
+  }
+
+  loadFiles();
+</script>
+</body>
+</html>

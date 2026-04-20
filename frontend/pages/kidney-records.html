@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('gs_theme')||'light')</script>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>GlucoSense — Kidney Assessment History</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../assets/css/global.css"/>
+  <style>
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;transition:border-color .2s,box-shadow .2s,transform .2s,background .25s}
+    .stat-card:hover{border-color:var(--muted2);box-shadow:0 4px 16px var(--shadow);transform:translateY(-1px)}
+    .stat-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+    .stat-icon.purple{background:rgba(168,85,247,.1);color:#a855f7}
+    .stat-icon.green{background:rgba(16,185,129,.1);color:#10b981}
+    .stat-icon.amber{background:rgba(245,158,11,.1);color:#f59e0b}
+    .stat-icon.red{background:rgba(239,68,68,.1);color:#ef4444}
+    .stat-val{font-family:'Syne',sans-serif;font-size:1.65rem;font-weight:800;line-height:1;color:var(--text);margin-bottom:4px}
+    .stat-lbl{font-size:.75rem;color:var(--muted2);font-weight:500}
+    .four-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;transition:background .25s,border-color .25s}
+    .btn-primary{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-size:.83rem;font-weight:700;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;box-shadow:0 2px 6px rgba(168,85,247,.25)}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(168,85,247,.35)}
+    .btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;background:var(--subtle);border:1px solid var(--border);color:var(--text2);font-size:.82rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+    .btn-ghost:hover{background:var(--hover);color:var(--text);border-color:var(--muted2)}
+    .btn-ghost:disabled{opacity:.4;cursor:not-allowed}
+    .filter-btn{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .2s}
+    .filter-btn:hover{border-color:rgba(168,85,247,.3);color:#a855f7}
+    .filter-btn.active{background:rgba(168,85,247,.08);color:#a855f7;border-color:rgba(168,85,247,.2)}
+    .btn-danger{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:7px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);color:#ef4444;font-size:.78rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+    .btn-danger:hover{background:rgba(239,68,68,.12)}
+    table{width:100%;border-collapse:collapse}
+    thead th{background:var(--subtle);padding:11px 16px;text-align:left;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted2);border-bottom:1px solid var(--border);white-space:nowrap}
+    tbody td{padding:13px 16px;border-bottom:1px solid var(--border-sub);color:var(--text2);font-size:.855rem}
+    tbody tr:last-child td{border-bottom:none}
+    tbody tr:hover td{background:var(--hover);color:var(--text)}
+    @media(max-width:1100px){.four-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:640px){.four-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div style="display:flex;min-height:100vh">
+  <aside class="sidebar"></aside>
+  <div class="main-wrap" style="flex:1;display:flex;flex-direction:column">
+
+    <header class="topbar">
+      <div style="flex:1">
+        <div class="topbar-title">Kidney Assessment History</div>
+        <div class="topbar-sub">Longitudinal record of your kidney disease risk assessments</div>
+      </div>
+      <button class="btn-ghost" onclick="exportCSV()" style="margin-right:8px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+      <button class="btn-primary" onclick="location.href='kidney-assessment.html'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Assessment
+      </button>
+    </header>
+
+    <main style="padding:28px 32px;flex:1">
+
+      <!-- Stats cards -->
+      <div class="four-grid" style="margin-bottom:24px">
+        <div class="stat-card">
+          <div class="stat-icon purple">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.5 2 6 6 6 10c0 5.25 6 12 6 12s6-6.75 6-12c0-4-2.5-8-6-8z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          </div>
+          <div class="stat-val" id="r-total">—</div><div class="stat-lbl">Total Assessments</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div class="stat-val" id="r-avg">—</div><div class="stat-lbl">Average Risk Score</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon amber">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="stat-val" id="r-latest">—</div><div class="stat-lbl">Latest Risk Level</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="stat-val" id="r-high">—</div><div class="stat-lbl">High Risk Events</div>
+        </div>
+      </div>
+
+      <!-- Table card -->
+      <div class="card">
+        <div style="padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--text)">Assessment Records</div>
+          <div style="display:flex;gap:6px">
+            <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+            <button class="filter-btn" onclick="setFilter('Low',this)">Low</button>
+            <button class="filter-btn" onclick="setFilter('Moderate',this)">Moderate</button>
+            <button class="filter-btn" onclick="setFilter('High',this)">High</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>CKD Risk</th>
+                <th>Risk %</th>
+                <th>Creatinine</th>
+                <th>Urea</th>
+                <th>Haemoglobin</th>
+                <th>Hypertension</th>
+                <th>Diabetes</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="records-body">
+              <tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted2)">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="padding:14px 22px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div style="font-size:.8rem;color:var(--muted2)" id="pagination-info">—</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn-ghost" id="btn-prev" onclick="changePage(-1)" disabled>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              Previous
+            </button>
+            <button class="btn-ghost" id="btn-next" onclick="changePage(1)">
+              Next
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="../components/api.js"></script>
+<script>
+  Auth.requireAuth();
+  buildSidebar("kidney-records");
+
+  let allRecords = [];
+  let filteredRecords = [];
+  let currentPage = 1;
+  const perPage = 10;
+  let activeFilter = "all";
+
+  async function loadStats() {
+    try {
+      const s = await apiFetch("/kidney/records/stats");
+      document.getElementById("r-total").textContent  = s.total;
+      document.getElementById("r-avg").textContent    = s.total ? s.avg_risk + "%" : "—";
+      document.getElementById("r-latest").textContent = s.latest_risk || "—";
+      document.getElementById("r-high").textContent   = s.high_risk_count;
+    } catch(e) { console.error("Stats error", e); }
+  }
+
+  async function loadRecords() {
+    try {
+      // Load all records for client-side filtering (up to 200)
+      const data = await apiFetch("/kidney/records?per_page=200");
+      allRecords = data.records || [];
+      applyFilter();
+    } catch(e) {
+      document.getElementById("records-body").innerHTML =
+        `<tr><td colspan="10" style="text-align:center;padding:32px;color:#ef4444">Failed to load records</td></tr>`;
+    }
+  }
+
+  function setFilter(val, btn) {
+    activeFilter = val;
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentPage = 1;
+    applyFilter();
+  }
+
+  function applyFilter() {
+    filteredRecords = activeFilter === "all"
+      ? allRecords
+      : allRecords.filter(r => r.risk_level === activeFilter);
+    renderPage();
+  }
+
+  function renderPage() {
+    const total = filteredRecords.length;
+    const pages = Math.max(1, Math.ceil(total / perPage));
+    currentPage = Math.min(currentPage, pages);
+    const start = (currentPage - 1) * perPage;
+    const slice = filteredRecords.slice(start, start + perPage);
+
+    document.getElementById("pagination-info").textContent =
+      total === 0 ? "No records" : `Showing ${start + 1}–${Math.min(start + perPage, total)} of ${total} records`;
+
+    document.getElementById("btn-prev").disabled = currentPage <= 1;
+    document.getElementById("btn-next").disabled = currentPage >= pages;
+
+    const tbody = document.getElementById("records-body");
+    if (slice.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted2)">No assessments found</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = slice.map((r, i) => `
+      <tr>
+        <td style="color:var(--muted2);font-size:.78rem">${start + i + 1}</td>
+        <td style="white-space:nowrap">${formatDate(r.created_at)}</td>
+        <td>${riskBadge(r.risk_level)}</td>
+        <td style="font-weight:600;color:var(--text)">${(r.probability * 100).toFixed(1)}%</td>
+        <td>${r.serum_creatinine ?? "—"} mg/dL</td>
+        <td>${r.blood_urea ?? "—"} mg/dL</td>
+        <td>${r.haemoglobin ?? "—"} g/dL</td>
+        <td>${r.hypertension ? yesChip() : noChip()}</td>
+        <td>${r.diabetes_mellitus ? yesChip() : noChip()}</td>
+        <td>
+          <button class="btn-danger" onclick="deleteRecord(${r.id})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            Delete
+          </button>
+        </td>
+      </tr>`).join("");
+  }
+
+  function yesChip() {
+    return `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:600;background:rgba(239,68,68,.08);color:#dc2626;border:1px solid rgba(239,68,68,.18)"><span style="width:4px;height:4px;border-radius:50%;background:#dc2626"></span>Yes</span>`;
+  }
+  function noChip() {
+    return `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:600;background:rgba(16,185,129,.08);color:#059669;border:1px solid rgba(16,185,129,.18)"><span style="width:4px;height:4px;border-radius:50%;background:#059669"></span>No</span>`;
+  }
+
+  function changePage(dir) {
+    currentPage += dir;
+    renderPage();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function deleteRecord(id) {
+    if (!confirm("Delete this kidney assessment record? This cannot be undone.")) return;
+    try {
+      await apiFetch(`/kidney/records/${id}`, { method: "DELETE" });
+      Toast.success("Record deleted");
+      allRecords = allRecords.filter(r => r.id !== id);
+      applyFilter();
+      loadStats();
+    } catch(e) {
+      Toast.error(e.message || "Failed to delete record");
+    }
+  }
+
+  function exportCSV() {
+    if (!filteredRecords.length) { Toast.info("No records to export"); return; }
+    const headers = [
+      "Date","Risk Level","Risk %","Age","Blood Pressure","Blood Glucose",
+      "Blood Urea","Serum Creatinine","Sodium","Potassium","Haemoglobin",
+      "Packed Cell Vol","WBC","RBC","Hypertension","Diabetes","Pedal Oedema","Anaemia"
+    ];
+    const rows = filteredRecords.map(r => [
+      formatDate(r.created_at),
+      r.risk_level,
+      (r.probability * 100).toFixed(1) + "%",
+      r.age_input,
+      r.blood_pressure,
+      r.blood_glucose_random,
+      r.blood_urea,
+      r.serum_creatinine,
+      r.sodium,
+      r.potassium,
+      r.haemoglobin,
+      r.packed_cell_volume,
+      r.white_blood_cell_count,
+      r.red_blood_cell_count,
+      r.hypertension ? "Yes" : "No",
+      r.diabetes_mellitus ? "Yes" : "No",
+      r.pedal_edema ? "Yes" : "No",
+      r.anemia ? "Yes" : "No",
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `kidney_assessments_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    Toast.success("CSV exported successfully");
+  }
+
+  loadStats();
+  loadRecords();
+</script>
+</body>
+</html>

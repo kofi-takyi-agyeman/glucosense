@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>GlucoSense — Risk Assessment</title>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('gs_theme')||'light')</script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../assets/css/global.css"/>
+  <style>
+    .step-bar{display:flex;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px;background:var(--card);transition:border-color .25s,background .25s}
+    .step-tab{flex:1;padding:13px 16px;text-align:center;font-size:.83rem;font-weight:600;color:var(--muted2);background:transparent;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;border-right:1px solid var(--border)}
+    .step-tab:last-child{border-right:none}
+    .step-tab.active{background:rgba(14,165,233,.07);color:#0ea5e9}
+    .step-tab .sn{display:block;font-size:1rem;margin-bottom:2px}
+    .step{display:none}.step.active{display:block}
+    .result-panel{display:none;margin-top:24px}
+    .result-header{display:flex;align-items:center;gap:20px;padding:26px;border-radius:14px;margin-bottom:18px}
+    .result-header.low{background:linear-gradient(135deg,rgba(16,185,129,.07),rgba(16,185,129,.02));border:1px solid rgba(16,185,129,.18)}
+    .result-header.moderate{background:linear-gradient(135deg,rgba(245,158,11,.07),rgba(245,158,11,.02));border:1px solid rgba(245,158,11,.18)}
+    .result-header.high{background:linear-gradient(135deg,rgba(239,68,68,.07),rgba(239,68,68,.02));border:1px solid rgba(239,68,68,.18)}
+    .risk-circle{width:88px;height:88px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;border:2px solid currentColor}
+    .risk-circle.low{color:#10b981;background:rgba(16,185,129,.08)}
+    .risk-circle.moderate{color:#f59e0b;background:rgba(245,158,11,.08)}
+    .risk-circle.high{color:#ef4444;background:rgba(239,68,68,.08)}
+    .risk-pct{font-family:'Syne',sans-serif;font-size:1.55rem;font-weight:800;line-height:1}
+    .risk-sub{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;margin-top:2px;opacity:.8}
+    .rec-item{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;background:var(--subtle);border:1px solid var(--border-sub);border-radius:10px;transition:background .25s}
+    .rec-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+    .bmi-calc{margin-top:10px;border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .25s}
+    .bmi-calc summary{padding:10px 14px;font-size:.78rem;color:#0ea5e9;cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;background:rgba(14,165,233,.05);font-weight:600}
+    .bmi-calc-body{padding:14px;background:var(--subtle);border-top:1px solid var(--border);transition:background .25s}
+    .disclaimer{margin-top:16px;padding:12px 14px;background:var(--subtle);border-radius:8px;border:1px solid var(--border);font-size:.78rem;color:var(--muted2);line-height:1.6;transition:background .25s}
+
+    /* Explainer */
+    .explain-card{padding:22px;margin-bottom:16px}
+    .explain-head{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:6px}
+    .explain-sub{font-size:.8rem;color:var(--muted2);margin-bottom:18px;line-height:1.55}
+    .explain-item{border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:12px;background:var(--card);position:relative;overflow:hidden}
+    .explain-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+    .explain-item.sev-warn::before{background:#f59e0b}
+    .explain-item.sev-bad::before{background:#ef4444}
+    .explain-item:last-child{margin-bottom:0}
+    .explain-row{display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+    .explain-emoji{font-size:1.4rem;line-height:1}
+    .explain-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;color:var(--text)}
+    .explain-val{font-size:.82rem;font-weight:700;padding:3px 10px;border-radius:20px}
+    .explain-val.warn{background:rgba(245,158,11,.1);color:#d97706;border:1px solid rgba(245,158,11,.25)}
+    .explain-val.bad{background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.25)}
+    .explain-target{font-size:.74rem;color:var(--muted2);margin-bottom:8px;padding-left:30px}
+    .explain-reason{font-size:.82rem;color:var(--text2);line-height:1.6;margin-bottom:8px;padding-left:30px}
+    .explain-tip{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;background:var(--subtle);border-radius:8px;font-size:.8rem;color:var(--text);line-height:1.55}
+    .explain-tip::before{content:"→";color:#0ea5e9;font-weight:700;flex-shrink:0}
+
+    /* Gender selector */
+    .gender-section{margin-bottom:22px;padding-bottom:22px;border-bottom:1px dashed var(--border)}
+    .gender-label{display:block;font-size:.78rem;font-weight:600;color:var(--text);margin-bottom:4px}
+    .gender-hint{font-size:.76rem;color:var(--muted2);margin-bottom:12px;display:block}
+    .gender-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .gender-option{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--card);cursor:pointer;transition:all .2s;position:relative}
+    .gender-option:hover{border-color:var(--muted2);background:var(--subtle)}
+    .gender-option input{position:absolute;opacity:0;pointer-events:none}
+    .gender-option .g-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--subtle);color:var(--muted);transition:all .2s;flex-shrink:0;font-size:1.15rem;font-weight:700}
+    .gender-option .g-label{font-size:.88rem;font-weight:600;color:var(--text)}
+    .gender-option .g-sub{font-size:.72rem;color:var(--muted2);margin-top:2px}
+    .gender-option .g-check{margin-left:auto;width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+    .gender-option.selected-female{border-color:#ec4899;background:rgba(236,72,153,.05)}
+    .gender-option.selected-female .g-icon{background:rgba(236,72,153,.1);color:#ec4899}
+    .gender-option.selected-female .g-check{border-color:#ec4899;background:#ec4899}
+    .gender-option.selected-male{border-color:#0ea5e9;background:rgba(14,165,233,.05)}
+    .gender-option.selected-male .g-icon{background:rgba(14,165,233,.1);color:#0ea5e9}
+    .gender-option.selected-male .g-check{border-color:#0ea5e9;background:#0ea5e9}
+    .gender-option .g-check svg{opacity:0;transition:opacity .2s}
+    .gender-option.selected-female .g-check svg,
+    .gender-option.selected-male .g-check svg{opacity:1}
+    #group-preg{transition:opacity .3s,max-height .3s}
+    #group-preg.hidden-male{display:none}
+    .male-notice{display:none;padding:10px 14px;background:rgba(14,165,233,.06);border:1px solid rgba(14,165,233,.15);border-radius:10px;font-size:.78rem;color:var(--text2);margin-top:12px;margin-bottom:4px;align-items:center;gap:8px;line-height:1.5}
+    .male-notice.show{display:flex}
+    .male-notice svg{color:#0ea5e9;flex-shrink:0}
+  </style>
+</head>
+<body>
+<div style="display:flex;min-height:100vh">
+  <aside class="sidebar"></aside>
+  <div class="main-wrap" style="flex:1;display:flex;flex-direction:column">
+
+    <header class="topbar">
+      <div style="flex:1">
+        <div class="topbar-title">Risk Assessment</div>
+        <div class="topbar-sub">Enter clinical parameters for AI-powered analysis</div>
+      </div>
+    </header>
+
+    <main style="padding:28px 32px;flex:1">
+      <div style="max-width:800px">
+
+        <div class="step-bar">
+          <button class="step-tab active" id="tab-1" onclick="goStep(1)"><span class="sn">①</span>Patient Info</button>
+          <button class="step-tab" id="tab-2" onclick="goStep(2)"><span class="sn">②</span>Clinical Data</button>
+          <button class="step-tab" id="tab-3"><span class="sn">③</span>Results</button>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="step active card" id="step-1" style="padding:26px">
+          <h3 style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:4px">Patient Information</h3>
+          <p style="font-size:.82rem;color:var(--muted2);margin-bottom:24px">Basic demographic data used to contextualise your assessment</p>
+
+          <div class="gender-section">
+            <label class="gender-label">Biological Sex</label>
+            <span class="gender-hint">Pregnancy history is only collected for female patients.</span>
+            <div class="gender-grid">
+              <div class="gender-option" id="gender-female" onclick="selectGender('Female')" role="button" tabindex="0">
+                <input type="radio" name="gender" value="Female"/>
+                <div class="g-icon">♀</div>
+                <div>
+                  <div class="g-label">Female</div>
+                  <div class="g-sub">Includes pregnancy history</div>
+                </div>
+                <div class="g-check">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="gender-option" id="gender-male" onclick="selectGender('Male')" role="button" tabindex="0">
+                <input type="radio" name="gender" value="Male"/>
+                <div class="g-icon">♂</div>
+                <div>
+                  <div class="g-label">Male</div>
+                  <div class="g-sub">Pregnancy field excluded</div>
+                </div>
+                <div class="g-check">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group" id="group-preg">
+              <label class="form-label">Number of Pregnancies</label>
+              <input class="form-input" type="number" id="f-preg" min="0" max="20" value="0" placeholder="0"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Enter 0 if not applicable</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Patient Age (years)</label>
+              <input class="form-input" type="number" id="f-age" min="1" max="120" placeholder="35"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Age at time of assessment</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">BMI (kg/m²)</label>
+              <input class="form-input" type="number" id="f-bmi" min="10" max="70" step="0.1" placeholder="26.5"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal range: 18.5 – 24.9</span>
+              <details class="bmi-calc">
+                <summary>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  Calculate from height &amp; weight
+                </summary>
+                <div class="bmi-calc-body">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                    <div class="form-group">
+                      <label class="form-label">Height (cm)</label>
+                      <input class="form-input" type="number" id="calc-h" min="50" max="250" placeholder="170" oninput="calcBMI()"/>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Weight (kg)</label>
+                      <input class="form-input" type="number" id="calc-w" min="10" max="300" step="0.1" placeholder="70" oninput="calcBMI()"/>
+                    </div>
+                  </div>
+                  <div id="bmi-result" style="font-size:.79rem;color:var(--muted2);text-align:center;min-height:18px"></div>
+                </div>
+              </details>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Diabetes Pedigree Function</label>
+              <input class="form-input" type="number" id="f-dpf" min="0" max="3" step="0.001" placeholder="0.472"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Family history score (0.078 – 2.42)</span>
+            </div>
+          </div>
+
+          <div id="male-notice" class="male-notice">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            Pregnancy count isn't applicable for male patients — this field has been excluded from your assessment.
+          </div>
+
+          <div style="margin-top:24px;display:flex;justify-content:flex-end">
+            <button class="btn-primary" onclick="nextFromStep1()">
+              Next: Clinical Data
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step card" id="step-2" style="padding:26px">
+          <h3 style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:4px">Clinical Measurements</h3>
+          <p style="font-size:.82rem;color:var(--muted2);margin-bottom:24px">Biomarker values from your most recent blood work or physical examination</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Plasma Glucose (mg/dL)</label>
+              <input class="form-input" type="number" id="f-glucose" min="0" max="300" placeholder="120"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Fasting normal: 70 – 99 mg/dL</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Diastolic Blood Pressure (mmHg)</label>
+              <input class="form-input" type="number" id="f-bp" min="0" max="200" placeholder="72"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal range: 60 – 80 mmHg</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Triceps Skin Thickness (mm)</label>
+              <input class="form-input" type="number" id="f-skin" min="0" max="100" placeholder="23"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal skinfold: 10 – 40 mm</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">2-Hour Serum Insulin (μU/mL)</label>
+              <input class="form-input" type="number" id="f-insulin" min="0" max="900" placeholder="85"/>
+              <span class="form-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Normal: 16 – 166 μU/mL</span>
+            </div>
+          </div>
+          <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
+            <button class="btn-ghost" onclick="goStep(1)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              Back
+            </button>
+            <button class="btn-primary" id="submit-btn" onclick="runAssessment()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span id="btn-text">Analyse Risk</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="result-panel" id="result-panel">
+          <div class="result-header low" id="result-header">
+            <div class="risk-circle low" id="result-circle">
+              <div class="risk-pct" id="result-pct">—</div>
+              <div class="risk-sub">Risk</div>
+            </div>
+            <div style="flex:1">
+              <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--text);margin-bottom:6px" id="result-title">Analysis Complete</div>
+              <div style="font-size:.87rem;color:var(--muted2);margin-bottom:14px;line-height:1.55" id="result-desc"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-ghost" style="padding:8px 14px;font-size:.8rem" onclick="generatePDF()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Download PDF
+                </button>
+                <button class="btn-ghost" style="padding:8px 14px;font-size:.8rem" onclick="newAssessment()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  New Assessment
+                </button>
+                <a href="records.html" style="text-decoration:none">
+                  <button class="btn-ghost" style="padding:8px 14px;font-size:.8rem">View All Records</button>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:22px;margin-bottom:16px">
+            <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:18px">Clinical Factor Breakdown</div>
+            <div id="factor-bars"></div>
+          </div>
+
+          <!-- NEW: Why you got this result -->
+          <div class="card explain-card" id="explain-card" style="display:none">
+            <div class="explain-head">Why you got this result</div>
+            <div class="explain-sub" id="explain-sub"></div>
+            <div id="explain-list"></div>
+          </div>
+
+          <div class="card" style="padding:22px">
+            <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:16px">Personalised Recommendations</div>
+            <div id="recommendations" style="display:flex;flex-direction:column;gap:10px"></div>
+            <div class="disclaimer">
+              <strong style="color:var(--text2)">Medical Disclaimer:</strong> This assessment is for informational purposes only and does not constitute medical advice. Always consult a qualified healthcare professional before making any health decisions.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="../components/api.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  Auth.requireAuth();
+  buildSidebar("assessment");
+  let lastResult = null;
+  let lastExplanations = [];
+  let selectedGender = null;
+
+  function selectGender(g) {
+    selectedGender = g;
+    const female = document.getElementById("gender-female");
+    const male   = document.getElementById("gender-male");
+    female.classList.toggle("selected-female", g === "Female");
+    male.classList.toggle("selected-male",     g === "Male");
+    female.querySelector("input").checked = (g === "Female");
+    male.querySelector("input").checked   = (g === "Male");
+
+    const pregGroup = document.getElementById("group-preg");
+    const notice    = document.getElementById("male-notice");
+    if (g === "Male") {
+      pregGroup.classList.add("hidden-male");
+      notice.classList.add("show");
+      const preg = document.getElementById("f-preg");
+      if (preg) preg.value = "0";
+    } else {
+      pregGroup.classList.remove("hidden-male");
+      notice.classList.remove("show");
+    }
+  }
+
+  (function initGenderFromProfile() {
+    try {
+      const u = Auth.getUser && Auth.getUser();
+      const g = u && u.gender;
+      if (g === "Male" || g === "Female") selectGender(g);
+    } catch (_) {}
+  })();
+
+  function calcBMI() {
+    const h = parseFloat(document.getElementById("calc-h").value);
+    const w = parseFloat(document.getElementById("calc-w").value);
+    const el = document.getElementById("bmi-result");
+    if (!h || !w || h < 50 || w < 10) { el.textContent = ""; return; }
+    const bmi = w / Math.pow(h/100, 2);
+    const r   = Math.round(bmi*10)/10;
+    document.getElementById("f-bmi").value = r;
+    const cat = bmi < 18.5 ? "Underweight" : bmi < 25 ? "Normal weight" : bmi < 30 ? "Overweight" : "Obese";
+    const col = bmi < 25 ? "#10b981" : bmi < 30 ? "#f59e0b" : "#ef4444";
+    el.innerHTML = `BMI = <strong style="color:${col}">${r}</strong> <span style="color:var(--muted2)">(${cat})</span> — auto-filled above`;
+  }
+
+  function goStep(n) {
+    document.querySelectorAll(".step").forEach((s,i) => s.classList.toggle("active", i===n-1));
+    document.querySelectorAll(".step-tab").forEach((t,i) => t.classList.toggle("active", i===n-1));
+  }
+
+  function nextFromStep1() {
+    if (!selectedGender) {
+      Toast.error("Please select Male or Female before continuing");
+      document.getElementById("gender-female").scrollIntoView({ behavior:"smooth", block:"center" });
+      return;
+    }
+    goStep(2);
+  }
+
+  async function runAssessment() {
+    if (!selectedGender) {
+      Toast.error("Please select Male or Female before continuing");
+      goStep(1);
+      return;
+    }
+
+    const pregValue = selectedGender === "Male" ? 0 : document.getElementById("f-preg").value;
+
+    const fields = {
+      pregnancies:       pregValue,
+      glucose:           document.getElementById("f-glucose").value,
+      blood_pressure:    document.getElementById("f-bp").value,
+      skin_thickness:    document.getElementById("f-skin").value,
+      insulin:           document.getElementById("f-insulin").value,
+      bmi:               document.getElementById("f-bmi").value,
+      diabetes_pedigree: document.getElementById("f-dpf").value,
+      age:               document.getElementById("f-age").value,
+    };
+
+    for (const [k, v] of Object.entries(fields)) {
+      if (k === "pregnancies" && selectedGender === "Male") continue;
+      if (v === "" || v === null || v === undefined) {
+        Toast.error(`Please complete all fields — ${k.replace(/_/g," ")} is missing`);
+        return;
+      }
+    }
+
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    document.getElementById("btn-text").textContent = "Analysing…";
+    try {
+      const payload = Object.fromEntries(
+        Object.entries(fields).map(([k,v]) => [k, parseFloat(v)])
+      );
+      payload.gender = selectedGender;
+
+      const data = await apiFetch("/predict/", {
+        method: "POST",
+        body:   JSON.stringify(payload),
+      });
+      lastResult = { ...data, ...fields, gender: selectedGender };
+      renderResult(data, fields);
+      goStep(3);
+      document.getElementById("result-panel").style.display = "block";
+      setTimeout(() => document.getElementById("result-panel").scrollIntoView({ behavior:"smooth", block:"start" }), 100);
+    } catch(e) { Toast.error(e.message || "Assessment failed. Please try again."); }
+    finally { btn.disabled = false; document.getElementById("btn-text").textContent = "Analyse Risk"; }
+  }
+
+  // ── Explainer: why this result? ─────────────────────────────────────────
+  function buildExplanations(fields) {
+    const out = [];
+    const glu  = parseFloat(fields.glucose);
+    const bmi  = parseFloat(fields.bmi);
+    const bp   = parseFloat(fields.blood_pressure);
+    const ins  = parseFloat(fields.insulin);
+    const skin = parseFloat(fields.skin_thickness);
+    const dpf  = parseFloat(fields.diabetes_pedigree);
+    const age  = parseFloat(fields.age);
+
+    // Glucose — heaviest weight
+    if (glu >= 200) {
+      out.push({ sev:"bad", emoji:"🩸", title:"Severely elevated plasma glucose",
+        value:`${glu} mg/dL`, target:"Fasting target < 100 mg/dL · Diabetic range ≥ 126 mg/dL",
+        reason:"A reading this high on two separate occasions meets the ADA diagnostic threshold for Type 2 diabetes and indicates substantial beta-cell dysfunction.",
+        tip:"Book an HbA1c test within the next 2 weeks and start logging daily fasting readings with a home glucometer." });
+    } else if (glu >= 126) {
+      out.push({ sev:"bad", emoji:"🩸", title:"Elevated fasting glucose (diabetic range)",
+        value:`${glu} mg/dL`, target:"Target < 100 mg/dL · Diabetic threshold ≥ 126 mg/dL",
+        reason:"Readings at or above 126 mg/dL indicate impaired glucose handling and significantly elevate your diabetes probability.",
+        tip:"Ask your clinician for an HbA1c and a repeat fasting glucose; consider a low-glycaemic meal plan immediately." });
+    } else if (glu >= 100) {
+      out.push({ sev:"warn", emoji:"🩸", title:"Prediabetic glucose range",
+        value:`${glu} mg/dL`, target:"Target < 100 mg/dL · Prediabetic 100–125 mg/dL",
+        reason:"Impaired fasting glucose is one of the strongest early-warning signs and progresses to diabetes in up to 70% of cases without intervention.",
+        tip:"Cut refined sugars and starches, add 30 min of brisk walking daily, and recheck in 3 months." });
+    }
+
+    // BMI
+    if (bmi >= 35) {
+      out.push({ sev:"bad", emoji:"⚖️", title:"Severe obesity (class II+)",
+        value:`BMI ${bmi}`, target:"Normal 18.5–24.9 · Obese ≥ 30",
+        reason:"Excess visceral fat is the dominant driver of insulin resistance; severe obesity dramatically elevates both diabetes and cardiovascular risk.",
+        tip:"Discuss a structured weight-loss programme with your physician — a 5–10% reduction materially improves glycaemic control." });
+    } else if (bmi >= 30) {
+      out.push({ sev:"bad", emoji:"⚖️", title:"Obesity",
+        value:`BMI ${bmi}`, target:"Normal 18.5–24.9 · Obese ≥ 30",
+        reason:"Visceral adiposity drives insulin resistance and increases Type 2 diabetes risk by roughly 3×.",
+        tip:"Aim for 150 min/week of moderate aerobic activity plus a Mediterranean-style diet; even 5% weight loss helps substantially." });
+    } else if (bmi >= 25) {
+      out.push({ sev:"warn", emoji:"⚖️", title:"Overweight",
+        value:`BMI ${bmi}`, target:"Normal 18.5–24.9 · Overweight 25–29.9",
+        reason:"Being overweight modestly increases insulin resistance and often co-occurs with prediabetes.",
+        tip:"Small, sustainable habits — walking 8,000 steps/day and swapping sugary drinks for water — compound into meaningful risk reduction." });
+    }
+
+    // Blood pressure (diastolic)
+    if (bp >= 100) {
+      out.push({ sev:"bad", emoji:"🩺", title:"Hypertensive crisis range (diastolic)",
+        value:`${bp} mmHg`, target:"Target < 80 · Stage 2 ≥ 90 · Crisis ≥ 120",
+        reason:"Severe hypertension and diabetes compound each other's cardiovascular and renal damage dramatically.",
+        tip:"Seek same-day clinical evaluation; uncontrolled hypertension needs medication review urgently." });
+    } else if (bp >= 90) {
+      out.push({ sev:"bad", emoji:"🩺", title:"Stage 2 hypertension (diastolic)",
+        value:`${bp} mmHg`, target:"Target < 80 · Stage 2 ≥ 90",
+        reason:"Hypertension and diabetes share underlying metabolic pathways; having both multiplies stroke and kidney-disease risk.",
+        tip:"Reduce sodium to < 2,300 mg/day, check BP twice weekly, and ask your clinician about a DASH-diet review." });
+    } else if (bp >= 80) {
+      out.push({ sev:"warn", emoji:"🩺", title:"Elevated diastolic pressure",
+        value:`${bp} mmHg`, target:"Target < 80 · Elevated 80–89",
+        reason:"Borderline hypertension is a known independent risk factor for Type 2 diabetes progression.",
+        tip:"Limit processed foods, increase potassium-rich vegetables, and monitor BP weekly." });
+    }
+
+    // Insulin (hyperinsulinaemia signals resistance)
+    if (ins > 166) {
+      out.push({ sev:"warn", emoji:"💉", title:"Hyperinsulinaemia",
+        value:`${ins} μU/mL`, target:"Normal 16–166 μU/mL",
+        reason:"Elevated fasting insulin suggests your pancreas is compensating for insulin resistance — an early precursor to Type 2 diabetes.",
+        tip:"Intermittent fasting or reducing carb-heavy snacks can lower insulin output; discuss metformin eligibility with your clinician." });
+    }
+
+    // Skin thickness (subcutaneous adiposity proxy)
+    if (skin > 40) {
+      out.push({ sev:"warn", emoji:"📏", title:"Elevated triceps skinfold",
+        value:`${skin} mm`, target:"Normal 10–40 mm",
+        reason:"Thick triceps skinfolds correlate with higher body-fat percentage, a supporting indicator of metabolic syndrome.",
+        tip:"Combine resistance training with cardio — building lean muscle improves insulin sensitivity directly." });
+    }
+
+    // Diabetes pedigree function
+    if (dpf >= 1.0) {
+      out.push({ sev:"bad", emoji:"🧬", title:"Strong family history of diabetes",
+        value:`Pedigree ${dpf}`, target:"Most individuals < 0.5",
+        reason:"A high pedigree score reflects multiple first-degree relatives with diabetes, indicating substantial genetic predisposition.",
+        tip:"Genetic risk is non-modifiable, but lifestyle still accounts for the majority of lifetime risk — early screening every 6 months is advised." });
+    } else if (dpf >= 0.5) {
+      out.push({ sev:"warn", emoji:"🧬", title:"Moderate genetic predisposition",
+        value:`Pedigree ${dpf}`, target:"Typical value ≈ 0.3–0.5",
+        reason:"Family history of diabetes elevates your baseline risk and warrants more vigilant screening than the general population.",
+        tip:"Annual HbA1c and a sustained prevention-oriented lifestyle are your best defence." });
+    }
+
+    // Age
+    if (age >= 65) {
+      out.push({ sev:"warn", emoji:"📅", title:"Age-related risk elevation",
+        value:`${age} years`, target:"Risk rises sharply after 45; ≥ 65 is highest baseline risk",
+        reason:"Beta-cell function declines with age, reducing insulin secretion capacity and gradually elevating fasting glucose.",
+        tip:"Annual fasting glucose + HbA1c screening is now strongly recommended, even with no symptoms." });
+    } else if (age >= 45) {
+      out.push({ sev:"warn", emoji:"📅", title:"Age factor (45+)",
+        value:`${age} years`, target:"Baseline risk climbs after age 45",
+        reason:"Middle-age metabolic changes (reduced muscle mass, slower glucose clearance) raise diabetes incidence meaningfully.",
+        tip:"Prioritise strength training twice weekly — it offsets age-related insulin resistance more than cardio alone." });
+    }
+
+    return out;
+  }
+
+  function renderExplanations(exps, risk) {
+    const card = document.getElementById("explain-card");
+    const list = document.getElementById("explain-list");
+    const sub  = document.getElementById("explain-sub");
+    if (risk === "Low" || !exps.length) { card.style.display = "none"; return; }
+    card.style.display = "block";
+    sub.textContent = `${exps.length} contributing factor${exps.length===1?"":"s"} identified from your clinical data. Addressing each one directly reduces your diabetes risk.`;
+    list.innerHTML = exps.map(e => `
+      <div class="explain-item sev-${e.sev}">
+        <div class="explain-row">
+          <span class="explain-emoji">${e.emoji}</span>
+          <span class="explain-title">${e.title}</span>
+          <span class="explain-val ${e.sev}">${e.value}</span>
+        </div>
+        <div class="explain-target">${e.target}</div>
+        <div class="explain-reason">${e.reason}</div>
+        <div class="explain-tip">${e.tip}</div>
+      </div>`).join("");
+  }
+
+  function renderResult(data, fields) {
+    const risk = data.risk_level;
+    const pct  = data.probability;
+    const cls  = risk.toLowerCase();
+    document.getElementById("result-header").className = `result-header ${cls}`;
+    document.getElementById("result-circle").className = `risk-circle ${cls}`;
+    document.getElementById("result-pct").textContent  = pct + "%";
+    const titles = { Low:"Low Risk Detected", Moderate:"Moderate Risk Detected", High:"Elevated Risk Detected" };
+    const descs  = {
+      Low:      "Your biomarker profile suggests a low probability of diabetes. Maintain your healthy habits and continue with routine annual screening.",
+      Moderate: "Your results indicate a moderate risk. Targeted lifestyle modifications and closer clinical monitoring are strongly recommended.",
+      High:     "Your results indicate a significantly elevated diabetes risk. Please consult a qualified healthcare professional at your earliest opportunity.",
+    };
+    document.getElementById("result-title").textContent = titles[risk];
+    document.getElementById("result-desc").textContent  = descs[risk];
+
+    const factors = [
+      { l:"Glucose",        v:parseFloat(fields.glucose),           max:200,  normal:99,   unit:"mg/dL" },
+      { l:"BMI",            v:parseFloat(fields.bmi),               max:45,   normal:24.9, unit:""      },
+      { l:"Blood Pressure", v:parseFloat(fields.blood_pressure),    max:120,  normal:80,   unit:"mmHg"  },
+      { l:"Insulin",        v:parseFloat(fields.insulin),           max:300,  normal:166,  unit:"μU/mL" },
+      { l:"Skin Thickness", v:parseFloat(fields.skin_thickness),    max:80,   normal:40,   unit:"mm"    },
+      { l:"Pedigree Score", v:parseFloat(fields.diabetes_pedigree), max:2.5,  normal:0.5,  unit:""      },
+    ];
+    document.getElementById("factor-bars").innerHTML = factors.map(f => {
+      const pct2  = Math.min((f.v/f.max)*100, 100);
+      const over  = f.v > f.normal;
+      const color = over ? "#f59e0b" : "#10b981";
+      return `
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:.82rem;font-weight:600;color:var(--text2)">${f.l}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:.8rem;font-weight:600;color:${color}">${f.v} ${f.unit}</span>
+              <span style="font-size:.7rem;color:var(--muted2)">Normal ≤ ${f.normal}</span>
+              ${over ? `<span style="font-size:.68rem;background:rgba(245,158,11,.08);color:#d97706;padding:2px 7px;border-radius:20px;border:1px solid rgba(245,158,11,.2)">Above normal</span>` : ""}
+            </div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:${pct2}%;background:${color}"></div></div>
+        </div>`;
+    }).join("");
+
+    // Build & render explanations
+    lastExplanations = buildExplanations(fields);
+    renderExplanations(lastExplanations, risk);
+
+    const recs = {
+      Low: [
+        { icon:"🥗", title:"Maintain a balanced diet", desc:"Prioritise whole grains, vegetables, and lean protein. Limit refined sugars and ultra-processed foods.", bg:"rgba(16,185,129,.06)" },
+        { icon:"🏃", title:"Stay physically active", desc:"The WHO recommends 150 minutes of moderate aerobic activity per week to sustain metabolic health.", bg:"rgba(16,185,129,.06)" },
+        { icon:"📅", title:"Annual glucose screening", desc:"Even with low risk, have your fasting blood glucose and HbA1c checked annually as a preventive measure.", bg:"rgba(16,185,129,.06)" },
+      ],
+      Moderate: [
+        { icon:"🩺", title:"Schedule a clinical review", desc:"Discuss these results with your physician within the next 2–4 weeks for professional guidance.", bg:"rgba(245,158,11,.06)" },
+        { icon:"🍽", title:"Adopt a low-glycaemic diet", desc:"Reduce sugar, refined carbohydrates, and starchy foods. Significantly increase dietary fibre intake.", bg:"rgba(245,158,11,.06)" },
+        { icon:"⚖️", title:"Target a healthier body weight", desc:"A 5–10% reduction in body weight can meaningfully reduce insulin resistance and diabetes risk.", bg:"rgba(245,158,11,.06)" },
+        { icon:"📊", title:"Self-monitor blood glucose", desc:"A home glucometer allows you to track fasting glucose 2–3 times weekly for early detection.", bg:"rgba(245,158,11,.06)" },
+      ],
+      High: [
+        { icon:"🚨", title:"Seek medical advice promptly", desc:"Please book an urgent appointment with your doctor or endocrinologist within the next 7 days.", bg:"rgba(239,68,68,.06)" },
+        { icon:"💊", title:"Discuss preventive treatment options", desc:"Your clinician may recommend metformin or structured diabetes prevention programme referral.", bg:"rgba(239,68,68,.06)" },
+        { icon:"🍎", title:"Enrol in a diabetes prevention programme", desc:"Evidence-based lifestyle interventions can reduce diabetes incidence by up to 58% in high-risk individuals.", bg:"rgba(239,68,68,.06)" },
+        { icon:"📉", title:"Address cardiovascular risk factors", desc:"Diabetes significantly elevates cardiovascular risk. Monitor blood pressure and lipid profiles regularly.", bg:"rgba(239,68,68,.06)" },
+      ],
+    };
+    document.getElementById("recommendations").innerHTML = (recs[risk]||recs.Low).map(r => `
+      <div class="rec-item">
+        <div class="rec-icon" style="background:${r.bg}">${r.icon}</div>
+        <div>
+          <div style="font-size:.86rem;font-weight:600;color:var(--text);margin-bottom:3px">${r.title}</div>
+          <div style="font-size:.8rem;color:var(--muted2);line-height:1.55">${r.desc}</div>
+        </div>
+      </div>`).join("");
+  }
+
+  function generatePDF() {
+    if (!lastResult) { Toast.error("No result available to export"); return; }
+    const { jsPDF } = window.jspdf;
+    const doc  = new jsPDF();
+    const user = Auth.getUser();
+    doc.setFillColor(248,250,252); doc.rect(0,0,210,297,"F");
+    doc.setFillColor(255,255,255); doc.rect(0,0,210,44,"F");
+    doc.setDrawColor(226,232,240); doc.line(0,44,210,44);
+    doc.setTextColor(14,165,233); doc.setFontSize(20); doc.setFont("helvetica","bold"); doc.text("GlucoSense",14,18);
+    doc.setFontSize(8); doc.setTextColor(148,163,184); doc.text("DIABETES INTELLIGENCE PLATFORM",14,25);
+    doc.setFontSize(10); doc.setTextColor(15,23,42); doc.text("Clinical Assessment Report",14,34);
+    doc.setTextColor(148,163,184); doc.setFontSize(8); doc.text(`Generated: ${new Date().toLocaleString()}`,14,44);
+    doc.setTextColor(15,23,42); doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.text("PATIENT INFORMATION",14,58);
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(71,85,105);
+    doc.text(`Name: ${user?.full_name||"—"}`,14,66);
+    doc.text(`Sex: ${lastResult.gender||"—"}`,14,73);
+    doc.text(`Age: ${lastResult.age||"—"}`,14,80);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`,14,87);
+    doc.setTextColor(15,23,42); doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.text("CLINICAL PARAMETERS",14,101);
+
+    const params = [];
+    if (lastResult.gender !== "Male") {
+      params.push(["Pregnancies", lastResult.pregnancies]);
+    }
+    params.push(
+      ["Glucose (mg/dL)",       lastResult.glucose],
+      ["Blood Pressure (mmHg)", lastResult.blood_pressure],
+      ["Skin Thickness (mm)",   lastResult.skin_thickness],
+      ["Insulin (μU/mL)",       lastResult.insulin],
+      ["BMI (kg/m²)",           lastResult.bmi],
+      ["Diabetes Pedigree",     lastResult.diabetes_pedigree],
+      ["Age (years)",           lastResult.age],
+    );
+
+    doc.setFont("helvetica","normal"); doc.setFontSize(9);
+    params.forEach(([k,v],i)=>{
+      const y = 109 + i*8;
+      doc.setTextColor(71,85,105); doc.text(k+":",14,y);
+      doc.setTextColor(15,23,42); doc.text(String(v),100,y);
+    });
+
+    let cursorY = 109 + params.length*8 + 8;
+
+    // Contributing factors section
+    if (lastExplanations && lastExplanations.length) {
+      doc.setTextColor(15,23,42); doc.setFont("helvetica","bold"); doc.setFontSize(10);
+      doc.text("CONTRIBUTING FACTORS",14,cursorY); cursorY += 7;
+      doc.setFont("helvetica","normal"); doc.setFontSize(8.5);
+      lastExplanations.forEach((e) => {
+        if (cursorY > 245) { doc.addPage(); doc.setFillColor(248,250,252); doc.rect(0,0,210,297,"F"); cursorY = 20; }
+        const color = e.sev === "bad" ? [220,38,38] : [217,119,6];
+        doc.setTextColor(...color); doc.setFont("helvetica","bold");
+        doc.text(`• ${e.title} — ${e.value}`, 14, cursorY); cursorY += 5;
+        doc.setFont("helvetica","normal"); doc.setTextColor(71,85,105);
+        const reasonLines = doc.splitTextToSize(e.reason, 180);
+        reasonLines.forEach(line => { doc.text(line, 18, cursorY); cursorY += 4.3; });
+        doc.setTextColor(14,165,233);
+        const tipLines = doc.splitTextToSize(`Tip: ${e.tip}`, 178);
+        tipLines.forEach(line => { doc.text(line, 18, cursorY); cursorY += 4.3; });
+        cursorY += 3;
+      });
+      cursorY += 3;
+    }
+
+    if (cursorY > 240) { doc.addPage(); doc.setFillColor(248,250,252); doc.rect(0,0,210,297,"F"); cursorY = 20; }
+
+    const rc={Low:[16,185,129],Moderate:[245,158,11],High:[239,68,68]}[lastResult.risk_level]||[16,185,129];
+    doc.setFillColor(...rc); doc.roundedRect(14,cursorY,182,26,4,4,"F");
+    doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(12); doc.text(`RISK LEVEL: ${lastResult.risk_level.toUpperCase()} — ${lastResult.probability}%`,105,cursorY+11,{align:"center"});
+    doc.setFontSize(8); doc.text("Based on a machine-learning model. Consult your physician.",105,cursorY+20,{align:"center"});
+    doc.setTextColor(148,163,184); doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.text("This report is for informational purposes only and does not constitute medical advice.",14,287);
+    doc.save(`GlucoSense_Assessment_${new Date().toISOString().split("T")[0]}.pdf`);
+    Toast.success("PDF report downloaded successfully");
+  }
+
+  function newAssessment() {
+    document.getElementById("result-panel").style.display = "none";
+    document.getElementById("explain-card").style.display = "none";
+    lastExplanations = [];
+    document.querySelectorAll(".form-input").forEach(i => { if(i.id!=="f-preg") i.value=""; else i.value="0"; });
+    document.getElementById("bmi-result").textContent = "";
+
+    selectedGender = null;
+    document.getElementById("gender-female").classList.remove("selected-female");
+    document.getElementById("gender-male").classList.remove("selected-male");
+    document.querySelectorAll("input[name='gender']").forEach(r => r.checked = false);
+    document.getElementById("group-preg").classList.remove("hidden-male");
+    document.getElementById("male-notice").classList.remove("show");
+
+    try {
+      const u = Auth.getUser && Auth.getUser();
+      const g = u && u.gender;
+      if (g === "Male" || g === "Female") selectGender(g);
+    } catch (_) {}
+
+    goStep(1);
+    window.scrollTo({ top:0, behavior:"smooth" });
+  }
+</script>
+</body>
+</html>

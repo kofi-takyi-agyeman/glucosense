@@ -1,0 +1,427 @@
+<!-- frontend/pages/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('gs_theme')||'light')</script>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>GlucoSense — Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../assets/css/global.css"/>
+  <style>
+    /* Let the main content stretch edge-to-edge */
+    .main-wrap{width:100%}
+    main.dash-main{
+      padding:clamp(20px,2.4vw,40px) clamp(20px,2.8vw,48px);
+      flex:1;
+      width:100%;
+      max-width:none;
+      display:flex;
+      flex-direction:column;
+      gap:clamp(18px,1.8vw,28px);
+    }
+
+    /* ── Stat cards ─────────────────────────────────────────────── */
+    .stat-card{
+      background:var(--card);border:1px solid var(--border);border-radius:16px;
+      padding:clamp(20px,1.8vw,28px) clamp(22px,2vw,30px);
+      position:relative;overflow:hidden;
+      transition:border-color .2s,box-shadow .2s,transform .2s,background .25s;
+      display:flex;flex-direction:column;justify-content:space-between;
+      min-height:140px;
+    }
+    .stat-card:hover{border-color:var(--muted2);box-shadow:0 6px 22px var(--shadow);transform:translateY(-2px)}
+    .stat-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+    .stat-icon.blue{background:rgba(14,165,233,.1);color:#0ea5e9}
+    .stat-icon.green{background:rgba(16,185,129,.1);color:#10b981}
+    .stat-icon.amber{background:rgba(245,158,11,.1);color:#f59e0b}
+    .stat-icon.red{background:rgba(239,68,68,.1);color:#ef4444}
+    .stat-val{font-family:'Syne',sans-serif;font-size:clamp(1.7rem,2vw,2.15rem);font-weight:800;line-height:1;color:var(--text);margin-bottom:6px}
+    .stat-lbl{font-size:.82rem;color:var(--muted2);font-weight:500;letter-spacing:.2px}
+
+    /* ── Generic cards ──────────────────────────────────────────── */
+    .card{
+      background:var(--card);border:1px solid var(--border);border-radius:16px;
+      transition:border-color .2s,box-shadow .2s,background .25s;
+      display:flex;flex-direction:column;
+      height:100%;
+    }
+    .card:hover{border-color:var(--muted2);box-shadow:0 4px 18px var(--shadow)}
+    .card-hd{padding:clamp(18px,1.4vw,22px) clamp(22px,1.8vw,28px);border-bottom:1px solid var(--border-sub)}
+    .card-title{font-family:'Syne',sans-serif;font-size:.98rem;font-weight:700;color:var(--text)}
+    .card-sub{font-size:.78rem;color:var(--muted2);margin-top:3px}
+    .card-body{padding:clamp(20px,1.8vw,28px) clamp(22px,1.8vw,28px);flex:1;display:flex;flex-direction:column}
+
+    /* ── Buttons ────────────────────────────────────────────────── */
+    .btn-primary{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;font-size:.86rem;font-weight:700;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;box-shadow:0 2px 8px rgba(14,165,233,.25)}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(14,165,233,.35)}
+    .btn-ghost{display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;background:var(--subtle);border:1px solid var(--border);color:var(--text2);font-size:.86rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;width:100%;text-align:left}
+    .btn-ghost:hover{background:var(--hover);color:var(--text);border-color:var(--muted2);transform:translateX(2px)}
+
+    /* ── Progress bars / gauges ─────────────────────────────────── */
+    .progress-track{height:6px;background:var(--border-sub);border-radius:99px;overflow:hidden}
+    .progress-fill{height:100%;border-radius:99px;transition:width .8s ease}
+    .kidney-bar-track{height:9px;background:var(--border-sub);border-radius:99px;overflow:hidden;margin:12px 0 6px}
+    .kidney-bar-fill{height:100%;border-radius:99px;transition:width 1s ease;background:linear-gradient(90deg,#a855f7,#7c3aed)}
+    .kidney-marker-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border-sub)}
+    .kidney-marker-row:last-child{border-bottom:none}
+
+    /* ── Grids that actually fill the screen ────────────────────── */
+    .four-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(16px,1.4vw,22px)}
+    .section-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(18px,1.6vw,26px)}
+    .three-grid {display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:clamp(18px,1.6vw,26px)}
+
+    /* Ultra-wide screens: breathe more, but don't cap width */
+    @media(min-width:1600px){
+      main.dash-main{padding:44px 56px;gap:30px}
+      .four-grid,.section-grid,.three-grid{gap:26px}
+    }
+
+    @media(max-width:1200px){
+      .section-grid{grid-template-columns:1fr}
+      .three-grid{grid-template-columns:1fr 1fr}
+      .three-grid > .card:first-child{grid-column:1 / -1}
+    }
+    @media(max-width:900px){
+      .four-grid{grid-template-columns:repeat(2,1fr)}
+      .three-grid{grid-template-columns:1fr}
+      .three-grid > .card:first-child{grid-column:auto}
+    }
+    @media(max-width:560px){
+      .four-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar"></aside>
+  <div class="main-wrap">
+
+    <header class="topbar">
+      <div style="flex:1">
+        <div class="topbar-title" id="greeting">Clinical Overview</div>
+        <div class="topbar-sub">Your personalised health summary</div>
+      </div>
+      <button class="btn-primary" onclick="location.href='assessment.html'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Assessment
+      </button>
+    </header>
+
+    <main class="dash-main">
+
+      <!-- Stat cards -->
+      <div class="four-grid">
+        <div class="stat-card">
+          <div class="stat-icon blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div>
+            <div class="stat-val" id="s-total">—</div>
+            <div class="stat-lbl">Total Assessments</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div>
+            <div class="stat-val" id="s-avg">—</div>
+            <div class="stat-lbl">Average Risk Score</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+          <div>
+            <div class="stat-val" id="s-docs">—</div>
+            <div class="stat-lbl">Medical Documents</div>
+          </div>
+        </div>
+        <div class="stat-card" id="s-risk-card">
+          <div class="stat-icon green" id="s-risk-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <div>
+            <div class="stat-val" id="s-risk">—</div>
+            <div class="stat-lbl">Latest Risk Level</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle -->
+      <div class="section-grid">
+
+        <!-- Gauge -->
+        <div class="card">
+          <div class="card-hd" style="display:flex;align-items:center;justify-content:space-between">
+            <div><div class="card-title">Risk Gauge</div><div class="card-sub">Most recent assessment probability</div></div>
+            <span id="gauge-badge" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:.74rem;font-weight:600;background:rgba(16,185,129,.08);color:#059669;border:1px solid rgba(16,185,129,.2)">No Data</span>
+          </div>
+          <div class="card-body" style="align-items:center;justify-content:center">
+            <svg viewBox="0 0 200 120" style="width:100%;max-width:340px;margin-bottom:6px">
+              <path d="M20,100 A80,80 0 0,1 180,100" fill="none" style="stroke:var(--border-sub)" stroke-width="14" stroke-linecap="round"/>
+              <path id="gauge-arc" d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="#10b981" stroke-width="14" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2" style="transition:stroke-dashoffset 1.2s ease,stroke .4s"/>
+              <line id="gauge-needle" x1="100" y1="100" x2="100" y2="32" style="stroke:var(--border);stroke-width:2;stroke-linecap:round;transform-origin:100px 100px;transform:rotate(-90deg);transition:transform 1.2s ease"/>
+              <circle cx="100" cy="100" r="6" style="fill:var(--card);stroke:var(--border)" stroke-width="2"/>
+              <text x="14" y="116" style="fill:var(--muted2)" font-size="9" font-family="DM Sans">0%</text>
+              <text x="87" y="20" style="fill:var(--muted2)" font-size="9" font-family="DM Sans">50%</text>
+              <text x="168" y="116" style="fill:var(--muted2)" font-size="9" font-family="DM Sans">100%</text>
+            </svg>
+            <div style="text-align:center">
+              <span id="gauge-val" style="font-family:'Syne',sans-serif;font-size:2.3rem;font-weight:800;color:#10b981">—</span>
+              <span style="font-size:.88rem;color:var(--muted2)"> % probability</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent -->
+        <div class="card">
+          <div class="card-hd" style="display:flex;align-items:center;justify-content:space-between">
+            <div><div class="card-title">Recent Assessments</div><div class="card-sub">Last 5 results</div></div>
+            <a href="records.html" style="font-size:.8rem;color:#0ea5e9;text-decoration:none;font-weight:600">View all →</a>
+          </div>
+          <div id="recent-list" style="padding:0 clamp(22px,1.8vw,28px);flex:1"></div>
+        </div>
+      </div>
+
+      <!-- Bottom -->
+      <div class="three-grid">
+
+        <!-- Key Biomarkers -->
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Key Biomarkers</div><div class="card-sub">From your latest diabetes assessment</div></div>
+          <div class="card-body" id="factors-list">
+            <div style="text-align:center;padding:24px 0;color:var(--muted2);font-size:.86rem;margin:auto">
+              No assessment data. <a href="assessment.html" style="color:#0ea5e9;text-decoration:none;font-weight:600">Run your first →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kidney Risk Card -->
+        <div class="card" id="kidney-card" style="border-color:rgba(168,85,247,.18)">
+          <div class="card-hd" style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div class="card-title" style="display:flex;align-items:center;gap:8px">
+                <span style="width:24px;height:24px;background:rgba(168,85,247,.1);border-radius:7px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.2"><path d="M12 2C8 2 5 6 5 10c0 5 3 8 7 12 4-4 7-7 7-12 0-4-3-8-7-8z"/></svg>
+                </span>
+                Kidney Risk
+              </div>
+              <div class="card-sub">Chronic kidney disease screening</div>
+            </div>
+            <span id="kidney-badge" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:.74rem;font-weight:600;background:var(--subtle);color:var(--muted2);border:1px solid var(--border)">No Data</span>
+          </div>
+          <div class="card-body" id="kidney-body">
+            <div style="text-align:center;padding:24px 0;color:var(--muted2);font-size:.86rem;margin:auto">
+              <svg style="margin:0 auto 12px;display:block;opacity:.3" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8 2 5 6 5 10c0 5 3 8 7 12 4-4 7-7 7-12 0-4-3-8-7-8z"/></svg>
+              <div style="margin-bottom:12px">No kidney assessment yet.</div>
+              <a href="kidney-assessment.html" style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:10px;background:rgba(168,85,247,.08);color:#a855f7;border:1px solid rgba(168,85,247,.2);text-decoration:none;font-size:.82rem;font-weight:600;transition:background .2s"
+                onmouseover="this.style.background='rgba(168,85,247,.15)'" onmouseout="this.style.background='rgba(168,85,247,.08)'">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Run kidney screening
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card" style="border-color:rgba(14,165,233,.15)">
+          <div class="card-hd"><div class="card-title">Quick Actions</div><div class="card-sub">Frequently used features</div></div>
+          <div class="card-body" style="gap:10px">
+            <button class="btn-ghost" onclick="location.href='assessment.html'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Run a diabetes assessment
+            </button>
+            <button class="btn-ghost" onclick="location.href='kidney-assessment.html'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8 2 5 6 5 10c0 5 3 8 7 12 4-4 7-7 7-12 0-4-3-8-7-8z"/></svg>
+              Run a kidney screening
+            </button>
+            <button class="btn-ghost" onclick="location.href='reports.html'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload a medical document
+            </button>
+            <button class="btn-ghost" onclick="location.href='records.html'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              View assessment history
+            </button>
+            <button class="btn-ghost" onclick="location.href='tips.html'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Browse clinical guidelines
+            </button>
+            <button class="btn-ghost" onclick="location.href='profile.html'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Update account settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="../components/api.js"></script>
+<script>
+  Auth.requireAuth();
+  const user = Auth.getUser();
+  const h = new Date().getHours();
+  const greeting = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  document.getElementById("greeting").textContent = `${greeting}, ${user?.full_name?.split(" ")[0] || "there"}`;
+  buildSidebar("dashboard");
+
+  async function load() {
+    try {
+      const [stats, records, reports, kidneyStats] = await Promise.all([
+        apiFetch("/records/stats"),
+        apiFetch("/records/?per_page=5"),
+        apiFetch("/reports/"),
+        apiFetch("/kidney/records/stats").catch(() => null),
+      ]);
+      document.getElementById("s-total").textContent = stats.total || 0;
+      document.getElementById("s-avg").textContent   = (stats.avg_probability || 0) + "%";
+      document.getElementById("s-docs").textContent  = (reports || []).length;
+      const risk = stats.latest_risk || "—";
+      document.getElementById("s-risk").textContent  = risk;
+      styleRiskCard(risk);
+      updateGauge(stats.latest_probability || 0, risk);
+      renderRecent(records.records || []);
+      if (records.records?.length) renderFactors(records.records[0]);
+      renderKidneyCard(kidneyStats);
+    } catch(e) { Toast.error("Failed to load dashboard data"); }
+  }
+
+  function renderKidneyCard(stats) {
+    if (!stats || !stats.total) return;
+    const risk = stats.latest_risk || "—";
+    const prob = stats.avg_probability != null ? (stats.avg_probability * 100).toFixed(1) : null;
+    const latestProb = stats.latest_probability != null ? (stats.latest_probability * 100).toFixed(1) : null;
+
+    const badgeCfg = {
+      Low:      { bg:"rgba(16,185,129,.08)",  color:"#059669", border:"rgba(16,185,129,.2)"  },
+      Moderate: { bg:"rgba(245,158,11,.08)",  color:"#d97706", border:"rgba(245,158,11,.2)"  },
+      High:     { bg:"rgba(239,68,68,.08)",   color:"#dc2626", border:"rgba(239,68,68,.2)"   },
+    };
+    const bc = badgeCfg[risk];
+
+    const badge = document.getElementById("kidney-badge");
+    if (bc) {
+      badge.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:.74rem;font-weight:600;background:${bc.bg};color:${bc.color};border:1px solid ${bc.border}`;
+      badge.textContent = risk + " Risk";
+    }
+
+    const riskBorder = { High:"rgba(239,68,68,.2)", Moderate:"rgba(245,158,11,.2)", Low:"rgba(168,85,247,.18)" };
+    document.getElementById("kidney-card").style.borderColor = riskBorder[risk] || "rgba(168,85,247,.18)";
+
+    const barColor = risk === "High" ? "linear-gradient(90deg,#ef4444,#dc2626)"
+                   : risk === "Moderate" ? "linear-gradient(90deg,#f59e0b,#d97706)"
+                   : "linear-gradient(90deg,#a855f7,#7c3aed)";
+    const barWidth = latestProb ? Math.min(parseFloat(latestProb), 100) : 0;
+    const valColor = bc ? bc.color : "#a855f7";
+
+    document.getElementById("kidney-body").innerHTML = `
+      <div style="display:flex;flex-direction:column;flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-size:.82rem;color:var(--muted2);">Latest probability</span>
+          <span style="font-family:'Syne',sans-serif;font-size:1.65rem;font-weight:800;color:${valColor}">${latestProb !== null ? latestProb + "%" : "—"}</span>
+        </div>
+        <div class="kidney-bar-track"><div class="kidney-bar-fill" style="width:0%;background:${barColor}" id="kidney-bar"></div></div>
+        <div style="font-size:.72rem;color:var(--muted2);text-align:right;margin-bottom:16px;">${stats.total} screening${stats.total !== 1 ? "s" : ""} recorded</div>
+
+        <div class="kidney-marker-row">
+          <span style="font-size:.84rem;color:var(--muted2);">Total screenings</span>
+          <span style="font-size:.86rem;font-weight:700;color:var(--text)">${stats.total}</span>
+        </div>
+        <div class="kidney-marker-row">
+          <span style="font-size:.84rem;color:var(--muted2);">Avg. probability</span>
+          <span style="font-size:.86rem;font-weight:700;color:var(--text)">${prob !== null ? prob + "%" : "—"}</span>
+        </div>
+        <div class="kidney-marker-row">
+          <span style="font-size:.84rem;color:var(--muted2);">High risk events</span>
+          <span style="font-size:.86rem;font-weight:700;color:${stats.high_risk_count > 0 ? "#ef4444" : "var(--text)"}">${stats.high_risk_count || 0}</span>
+        </div>
+
+        <a href="kidney-records.html" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:auto;padding:11px;border-radius:10px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.15);color:#a855f7;text-decoration:none;font-size:.84rem;font-weight:600;transition:background .2s"
+          onmouseover="this.style.background='rgba(168,85,247,.12)'" onmouseout="this.style.background='rgba(168,85,247,.06)'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          View all kidney records
+        </a>
+      </div>`;
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const bar = document.getElementById("kidney-bar");
+        if (bar) bar.style.width = barWidth + "%";
+      }, 80);
+    });
+  }
+
+  function styleRiskCard(risk) {
+    const map = {
+      High:     { bg:"rgba(239,68,68,.08)",   color:"#ef4444", border:"rgba(239,68,68,.15)"   },
+      Moderate: { bg:"rgba(245,158,11,.08)",  color:"#f59e0b", border:"rgba(245,158,11,.15)"  },
+      Low:      { bg:"rgba(16,185,129,.08)",  color:"#10b981", border:"rgba(16,185,129,.15)"  },
+    };
+    const s = map[risk]; if (!s) return;
+    document.getElementById("s-risk-card").style.borderColor = s.border;
+    const icon = document.getElementById("s-risk-icon");
+    icon.style.cssText = `width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;background:${s.bg};color:${s.color}`;
+  }
+
+  function updateGauge(prob, risk) {
+    const colors = { Low:"#10b981", Moderate:"#f59e0b", High:"#ef4444" };
+    const color  = colors[risk] || "#10b981";
+    document.getElementById("gauge-arc").style.strokeDashoffset = 251.2 - (prob/100)*251.2;
+    document.getElementById("gauge-arc").setAttribute("stroke", color);
+    document.getElementById("gauge-needle").style.transform = `rotate(${-90+(prob/100)*180}deg)`;
+    document.getElementById("gauge-val").textContent = prob > 0 ? prob + "%" : "—";
+    document.getElementById("gauge-val").style.color = color;
+    const badgeCfg = {
+      Low:      "background:rgba(16,185,129,.08);color:#059669;border:1px solid rgba(16,185,129,.2)",
+      Moderate: "background:rgba(245,158,11,.08);color:#d97706;border:1px solid rgba(245,158,11,.2)",
+      High:     "background:rgba(239,68,68,.08);color:#dc2626;border:1px solid rgba(239,68,68,.2)",
+    };
+    const badge = document.getElementById("gauge-badge");
+    if (badgeCfg[risk]) {
+      badge.setAttribute("style",`display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:.74rem;font-weight:600;${badgeCfg[risk]}`);
+      badge.textContent = risk + " Risk";
+    }
+  }
+
+  function renderRecent(records) {
+    const el = document.getElementById("recent-list");
+    if (!records.length) {
+      el.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--muted2);font-size:.86rem">No assessments yet.<br/><a href="assessment.html" style="color:#0ea5e9;text-decoration:none;font-weight:600">Start your first →</a></div>`;
+      return;
+    }
+    el.innerHTML = records.map(r => `
+      <div style="display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid var(--border-sub)">
+        <div style="flex:1">
+          <div style="font-size:.88rem;font-weight:600;color:var(--text)">Assessment #${r.id}</div>
+          <div style="font-size:.76rem;color:var(--muted2);margin-top:2px">${formatDate(r.created_at)}</div>
+        </div>
+        <div style="text-align:right">
+          ${riskBadge(r.risk_level)}
+          <div style="font-size:.75rem;color:var(--muted2);margin-top:4px">${(r.probability*100).toFixed(1)}%</div>
+        </div>
+      </div>`).join("");
+  }
+
+  function renderFactors(r) {
+    const factors = [
+      { l:"Glucose",        v:r.glucose,        max:200, safe:99,   unit:"mg/dL" },
+      { l:"BMI",            v:r.bmi,            max:50,  safe:24.9, unit:""      },
+      { l:"Blood Pressure", v:r.blood_pressure, max:120, safe:80,   unit:"mmHg"  },
+      { l:"Insulin",        v:r.insulin,        max:300, safe:166,  unit:"μU/mL" },
+    ];
+    document.getElementById("factors-list").innerHTML = factors.map(f => {
+      const pct   = Math.min((f.v/f.max)*100, 100);
+      const over  = f.v > f.safe;
+      const color = over ? "#f59e0b" : "#10b981";
+      return `
+        <div style="margin-bottom:22px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:.86rem;font-weight:600;color:var(--text2)">${f.l}</span>
+            <span style="font-size:.84rem;font-weight:600;color:${color}">${f.v} ${f.unit}</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div>
+        </div>`;
+    }).join("");
+  }
+
+  load();
+</script>
+</body>
+</html>

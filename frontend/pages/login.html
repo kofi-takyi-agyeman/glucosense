@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>GlucoSense — Sign In</title>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('gs_theme')||'light')</script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--bg:#f1f5f9;--card:#ffffff;--subtle:#f8fafc;--border:#e2e8f0;--text:#0f172a;--text2:#475569;--muted:#64748b;--muted2:#94a3b8;--input-bg:#f8fafc;--shadow:rgba(15,23,42,.06)}
+    [data-theme="dark"]{--bg:#060c15;--card:#0c1424;--subtle:#111c30;--border:rgba(255,255,255,.09);--text:#e2e8f0;--text2:#94a3b8;--muted:#64748b;--muted2:#4e6380;--input-bg:#0d1a2d;--shadow:rgba(0,0,0,.35)}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;-webkit-font-smoothing:antialiased;animation:page-in .3s ease both;transition:background .25s}
+    @keyframes page-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+    input,select,button{font-family:'DM Sans',sans-serif}
+
+    .left{flex:1;background:linear-gradient(160deg,#0f172a 0%,#1e3a5f 100%);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:64px 60px;position:relative;overflow:hidden}
+    .orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none}
+    .orb-a{width:420px;height:420px;background:rgba(14,165,233,.12);top:-80px;left:-80px}
+    .orb-b{width:320px;height:320px;background:rgba(16,185,129,.08);bottom:-60px;right:-60px}
+    .left-inner{position:relative;z-index:2;max-width:420px;width:100%}
+
+    .right{width:480px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:48px 52px;background:var(--card);box-shadow:-1px 0 0 var(--border);transition:background .25s,box-shadow .25s}
+    .auth-card{width:100%;max-width:368px}
+
+    .tabs{display:flex;background:var(--subtle);border:1px solid var(--border);border-radius:10px;padding:4px;gap:3px;margin-bottom:28px;transition:background .25s,border-color .25s}
+    .tab{flex:1;padding:9px;border-radius:7px;text-align:center;font-size:.85rem;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted2);font-family:'DM Sans',sans-serif;transition:all .2s}
+    .tab.active{background:var(--card);color:var(--text);border:1px solid var(--border);box-shadow:0 1px 4px var(--shadow)}
+
+    .form{display:none;flex-direction:column;gap:16px}
+    .form.active{display:flex}
+    .form-title{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--text);margin-bottom:2px;transition:color .25s}
+    .form-sub{font-size:.83rem;color:var(--muted);margin-bottom:4px}
+    .fg{display:flex;flex-direction:column;gap:6px}
+    .fl{font-size:.75rem;font-weight:600;color:var(--text2);letter-spacing:.03em;text-transform:uppercase}
+    .fi{background:var(--input-bg);border:1px solid var(--border);border-radius:9px;padding:11px 14px;color:var(--text);font-size:.875rem;transition:border-color .2s,box-shadow .2s,background .2s;width:100%;outline:none}
+    .fi:focus{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.12);background:var(--card)}
+    .fi::placeholder{color:var(--muted2)}
+    .fi option{background:var(--card);color:var(--text)}
+    [data-theme="dark"] .fi{color-scheme:dark}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .err{background:#fef2f2;border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 13px;font-size:.82rem;color:#dc2626;display:none}
+    [data-theme="dark"] .err{background:rgba(239,68,68,.08)}
+    .btn-sub{background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;border:none;border-radius:9px;padding:12px;font-size:.9rem;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;transition:all .2s;box-shadow:0 2px 8px rgba(14,165,233,.25)}
+    .btn-sub:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(14,165,233,.3)}
+    .btn-sub:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+    .divider{display:flex;align-items:center;gap:12px;font-size:.74rem;color:var(--muted2)}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+    .foot-text{text-align:center;font-size:.83rem;color:var(--muted)}
+    .link{color:#0ea5e9;cursor:pointer;font-weight:600;transition:opacity .15s}
+    .link:hover{opacity:.75}
+
+    /* Theme toggle for login page */
+    .login-theme-btn{position:fixed;top:20px;right:20px;z-index:100;width:36px;height:36px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 2px 8px var(--shadow)}
+    .login-theme-btn:hover{background:var(--subtle);color:var(--text)}
+    .icon-moon{display:block}
+    .icon-sun{display:none}
+    [data-theme="dark"] .icon-moon{display:none}
+    [data-theme="dark"] .icon-sun{display:block}
+
+    .feature-row{display:flex;align-items:center;gap:14px}
+    .feat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid}
+    .metric{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px}
+    .metric-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+    #toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+    .toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:9px;min-width:260px;font-size:.87rem;background:var(--card);border:1px solid var(--border);box-shadow:0 4px 16px var(--shadow)}
+    .toast.success{border-color:rgba(16,185,129,.3);color:#10b981}
+    .toast.error{border-color:rgba(239,68,68,.3);color:#ef4444}
+
+    @media(max-width:900px){.left{display:none}.right{width:100%;padding:40px 24px;box-shadow:none}}
+  </style>
+</head>
+<body>
+  <!-- Theme toggle -->
+  <button class="login-theme-btn" onclick="toggleTheme()" title="Toggle theme">
+    <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    <svg class="icon-sun"  width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  </button>
+  <!-- Left: Branding -->
+  <div class="left">
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+    <div class="left-inner">
+
+      <!-- Logo -->
+      <div style="display:flex;align-items:center;gap:13px;margin-bottom:48px">
+        <div style="width:44px;height:44px;border-radius:13px;background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,#38bdf8,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">GlucoSense</div>
+          <div style="font-size:.6rem;color:rgba(255,255,255,.3);letter-spacing:.12em;text-transform:uppercase">Diabetes Intelligence</div>
+        </div>
+      </div>
+
+      <!-- Headline -->
+      <h1 style="font-family:'Syne',sans-serif;font-size:2.4rem;font-weight:800;line-height:1.14;margin-bottom:16px;color:#ffffff">
+        Know your risk.<br/>
+        <span style="background:linear-gradient(135deg,#38bdf8,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Take control.</span>
+      </h1>
+      <p style="font-size:.875rem;color:rgba(255,255,255,.5);line-height:1.75;margin-bottom:40px">
+        GlucoSense uses a clinically-validated machine learning model to evaluate your diabetes risk from routine biomarkers — delivering actionable intelligence, not just raw numbers.
+      </p>
+
+      <!-- Features -->
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:44px">
+        <div class="feature-row">
+          <div class="feat-icon" style="background:rgba(14,165,233,.12);border-color:rgba(14,165,233,.2)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div>
+            <div style="font-size:.875rem;font-weight:600;color:#ffffff;margin-bottom:2px">ML-Powered Risk Assessment</div>
+            <div style="font-size:.8rem;color:rgba(255,255,255,.4)">Trained on validated clinical datasets</div>
+          </div>
+        </div>
+        <div class="feature-row">
+          <div class="feat-icon" style="background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.2)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div>
+            <div style="font-size:.875rem;font-weight:600;color:#ffffff;margin-bottom:2px">Longitudinal Trend Monitoring</div>
+            <div style="font-size:.8rem;color:rgba(255,255,255,.4)">Track biomarker changes across sessions</div>
+          </div>
+        </div>
+        <div class="feature-row">
+          <div class="feat-icon" style="background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.2)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div>
+            <div style="font-size:.875rem;font-weight:600;color:#ffffff;margin-bottom:2px">Exportable Clinical Reports</div>
+            <div style="font-size:.8rem;color:rgba(255,255,255,.4)">Download PDF assessments for your physician</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:flex;gap:10px">
+        <div class="metric" style="flex:1"><div class="metric-dot" style="background:#38bdf8"></div><div><div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:#fff">8</div><div style="font-size:.7rem;color:rgba(255,255,255,.35)">Biomarkers</div></div></div>
+        <div class="metric" style="flex:1"><div class="metric-dot" style="background:#34d399"></div><div><div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:#fff">ML</div><div style="font-size:.7rem;color:rgba(255,255,255,.35)">Powered</div></div></div>
+        <div class="metric" style="flex:1"><div class="metric-dot" style="background:#f59e0b"></div><div><div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:#fff">Free</div><div style="font-size:.7rem;color:rgba(255,255,255,.35)">Always</div></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Right: Auth forms -->
+  <div class="right">
+    <div class="auth-card">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('login')">Sign In</button>
+        <button class="tab" onclick="switchTab('register')">Create Account</button>
+      </div>
+
+      <!-- Login -->
+      <form class="form active" id="login-form" onsubmit="doLogin(event)">
+        <div>
+          <div class="form-title">Welcome back</div>
+          <div class="form-sub">Sign in to access your health dashboard</div>
+        </div>
+        <div class="err" id="le"></div>
+        <div class="fg">
+          <label class="fl">Email Address</label>
+          <input class="fi" type="email" id="le-email" placeholder="you@example.com" required autocomplete="email"/>
+        </div>
+        <div class="fg">
+          <label class="fl">Password</label>
+          <input class="fi" type="password" id="le-pass" placeholder="Enter your password" required autocomplete="current-password"/>
+        </div>
+        <button class="btn-sub" type="submit" id="lb">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          <span id="lb-text">Sign In</span>
+        </button>
+        <div class="divider">or</div>
+        <p class="foot-text">No account? <span class="link" onclick="switchTab('register')">Create one — it's free</span></p>
+      </form>
+
+      <!-- Register -->
+      <form class="form" id="register-form" onsubmit="doRegister(event)">
+        <div>
+          <div class="form-title">Create account</div>
+          <div class="form-sub">Join GlucoSense to begin your health journey</div>
+        </div>
+        <div class="err" id="re"></div>
+        <div class="fg">
+          <label class="fl">Full Name</label>
+          <input class="fi" type="text" id="re-name" placeholder="e.g. John Mensah" required autocomplete="name"/>
+        </div>
+        <div class="row2">
+          <div class="fg">
+            <label class="fl">Age</label>
+            <input class="fi" type="number" id="re-age" placeholder="30" min="1" max="120"/>
+          </div>
+          <div class="fg">
+            <label class="fl">Gender</label>
+            <select class="fi" id="re-gender">
+              <option value="">Select</option>
+              <option>Female</option>
+              <option>Male</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Email Address</label>
+          <input class="fi" type="email" id="re-email" placeholder="you@example.com" required autocomplete="email"/>
+        </div>
+        <div class="fg">
+          <label class="fl">Password</label>
+          <input class="fi" type="password" id="re-pass" placeholder="Minimum 6 characters" required minlength="6" autocomplete="new-password"/>
+        </div>
+        <button class="btn-sub" type="submit" id="rb">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          <span id="rb-text">Create Account</span>
+        </button>
+        <p class="foot-text">Already have an account? <span class="link" onclick="switchTab('login')">Sign in</span></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script>
+    const API = "http://localhost:5000/api";
+    if (localStorage.getItem("gs_token")) window.location.href = "dashboard.html";
+
+    function toggleTheme() {
+      const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("gs_theme", next);
+    }
+
+    function switchTab(t) {
+      document.querySelectorAll(".tab").forEach((el, i) =>
+        el.classList.toggle("active", (i === 0 && t === "login") || (i === 1 && t === "register")));
+      document.getElementById("login-form").classList.toggle("active", t === "login");
+      document.getElementById("register-form").classList.toggle("active", t === "register");
+    }
+
+    function showErr(id, msg) { const e = document.getElementById(id); e.textContent = msg; e.style.display = "block"; }
+    function hideErr(id) { document.getElementById(id).style.display = "none"; }
+
+    function toast(msg, type = "success") {
+      const c = document.getElementById("toast-container");
+      const t = document.createElement("div");
+      t.className = `toast ${type}`;
+      t.innerHTML = `<span>${msg}</span>`;
+      c.appendChild(t);
+      setTimeout(() => t.remove(), 3500);
+    }
+
+    async function doLogin(e) {
+      e.preventDefault(); hideErr("le");
+      const btn = document.getElementById("lb"); const txt = document.getElementById("lb-text");
+      btn.disabled = true; txt.textContent = "Signing in…";
+      try {
+        const r = await fetch(`${API}/auth/login`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: document.getElementById("le-email").value, password: document.getElementById("le-pass").value }) });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || "Login failed");
+        localStorage.setItem("gs_token", d.token);
+        localStorage.setItem("gs_user", JSON.stringify(d.user));
+        toast("Welcome back, " + d.user.full_name.split(" ")[0] + "!");
+        setTimeout(() => window.location.href = "dashboard.html", 700);
+      } catch (err) { showErr("le", err.message); btn.disabled = false; txt.textContent = "Sign In"; }
+    }
+
+    async function doRegister(e) {
+      e.preventDefault(); hideErr("re");
+      const btn = document.getElementById("rb"); const txt = document.getElementById("rb-text");
+      btn.disabled = true; txt.textContent = "Creating account…";
+      try {
+        const r = await fetch(`${API}/auth/register`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ full_name: document.getElementById("re-name").value, email: document.getElementById("re-email").value, password: document.getElementById("re-pass").value, age: document.getElementById("re-age").value || null, gender: document.getElementById("re-gender").value || null }) });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || "Registration failed");
+        localStorage.setItem("gs_token", d.token);
+        localStorage.setItem("gs_user", JSON.stringify(d.user));
+        toast("Account created! Welcome, " + d.user.full_name.split(" ")[0] + ".");
+        setTimeout(() => window.location.href = "dashboard.html", 700);
+      } catch (err) { showErr("re", err.message); btn.disabled = false; txt.textContent = "Create Account"; }
+    }
+  </script>
+</body>
+</html>
