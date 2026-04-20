@@ -1,167 +1,150 @@
-# 🩺 GlucoSense — AI Diabetes Intelligence Platform
+# Glucosense
 
-A full-stack diabetes risk prediction web application built with:
-- **Backend**: Python / Flask REST API with JWT authentication
-- **Frontend**: Vanilla HTML/CSS/JS (no framework — runs in any browser)
-- **AI Model**: Scikit-learn Logistic Regression trained on the Pima Indians Diabetes Dataset
+**A machine learning web application that predicts the risk of diabetes and chronic kidney disease from patient health data.**
 
----
+Glucosense is a full-stack health-screening tool that combines trained classification models with a clean web interface, giving users quick, private risk estimates they can share with a clinician.
 
-## 📁 Project Structure
-
-```
-glucosense/
-├── backend/
-│   ├── app.py                  # Flask app factory
-│   ├── requirements.txt        # Python dependencies
-│   ├── .env.example            # Environment variables template
-│   ├── model.pkl               # ← Place your model here
-│   ├── models/
-│   │   └── models.py           # SQLAlchemy DB models (User, Assessment, Report)
-│   └── routes/
-│       ├── auth.py             # Register, Login, Profile, Change Password
-│       ├── predict.py          # Risk prediction + history
-│       ├── records.py          # Assessment records + stats
-│       └── reports.py          # File upload / download / delete
-│
-└── frontend/
-    ├── assets/
-    │   └── css/
-    │       └── global.css      # Full design system (Navy/Gold luxury aesthetic)
-    ├── components/
-    │   └── api.js              # API wrapper, Auth helpers, Toast, Sidebar renderer
-    └── pages/
-        ├── index.html          # Animated splash screen
-        ├── login.html          # Login + Register (two-tab layout)
-        ├── dashboard.html      # Overview stats, gauge, trend chart, activity feed
-        ├── assessment.html     # Multi-step risk assessment form + results
-        ├── records.html        # Full assessment history with filters + pagination
-        ├── reports.html        # Upload / download medical documents
-        ├── tips.html           # Health tips + biomarker reference table
-        └── profile.html        # Account settings + change password
-```
+> **Disclaimer:** Glucosense is a personal portfolio project built for educational purposes. It is not a medical device and must not be used for actual diagnosis or treatment decisions. Always consult a qualified healthcare professional.
 
 ---
 
-## 🚀 Quick Start
+## Screenshots
 
-### 1. Backend Setup
+| Login | Dashboard |
+|-------|-----------|
+| ![Login](docs/screenshots/02-Login.png) | ![Dashboard](docs/screenshots/03-dashboard.png) |
 
-```bash
-cd glucosense/backend
+| Diabetes Assessment | Diabetes History |
+|---------------------|------------------|
+| ![Diabetes Assessment](docs/screenshots/04-diabetes-assessment.png) | ![Diabetes History](docs/screenshots/05-diabetes-history.png) |
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+| Kidney Assessment | Kidney History |
+|-------------------|----------------|
+| ![Kidney Assessment](docs/screenshots/06-kidney-assessment.png) | ![Kidney History](docs/screenshots/07-kidney-history.png) |
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy and configure environment
-cp .env.example .env
-# Edit .env with your own SECRET_KEY values
-
-# Place your model.pkl in the backend/ directory
-# (The app falls back to embedded coefficients if no model.pkl is found)
-
-# Run the server
-python app.py
-# → Flask API running on http://localhost:5000
-```
-
-### 2. Frontend Setup
-
-No build step required — open directly in a browser:
-
-```bash
-# Option A: VS Code Live Server (recommended)
-# Right-click frontend/pages/index.html → "Open with Live Server"
-
-# Option B: Python simple server
-cd glucosense/frontend
-python -m http.server 3000
-# → Open http://localhost:3000/pages/index.html
-```
-
-### 3. Ensure CORS is configured
-
-The backend allows requests from `http://localhost:3000` and `http://127.0.0.1:5500` by default.
-Edit the `CORS(...)` call in `app.py` to add your own origin if needed.
+| Clinical Guidelines | Light Mode |
+|---------------------|------------|
+| ![Clinical Guidelines](docs/screenshots/09-clinical-guidelines.png) | ![Light Mode](docs/screenshots/11-lightmode.png) |
 
 ---
 
-## 🔑 API Endpoints
+## Features
 
-### Auth
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Create account |
-| POST | `/api/auth/login` | Sign in, returns JWT |
-| GET  | `/api/auth/me` | Get current user (JWT required) |
-| PUT  | `/api/auth/profile` | Update profile |
-| POST | `/api/auth/change-password` | Change password |
-
-### Prediction
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/predict/` | Run assessment, save to DB |
-| GET  | `/api/predict/history` | Paginated assessment history |
-| GET  | `/api/predict/:id` | Single assessment detail |
-| DELETE | `/api/predict/:id` | Delete assessment |
-
-### Records & Reports
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET  | `/api/records/` | All records (paginated) |
-| GET  | `/api/records/stats` | Aggregate statistics |
-| POST | `/api/reports/upload` | Upload a file (multipart) |
-| GET  | `/api/reports/` | List all uploaded files |
-| GET  | `/api/reports/download/:id` | Download a file |
-| DELETE | `/api/reports/:id` | Delete a file |
+- **Diabetes risk prediction** using a Logistic Regression classifier trained on the Pima Indians Diabetes Dataset.
+- **Chronic kidney disease prediction** using a Random Forest classifier.
+- **User authentication** - secure signup, login, and personal session management.
+- **Personal health records** - users can save past assessments and track them over time.
+- **Clinical guidelines reference** - built-in reference for the metrics used in predictions.
+- **Downloadable reports** - assessment results can be exported for sharing with clinicians.
+- **Light and dark themes** - full theming support across the UI.
+- **Responsive web UI** - built with plain HTML, CSS, and JavaScript for fast load times and easy maintenance.
 
 ---
 
-## 🎨 Design System
+## Model Performance
 
-- **Aesthetic**: Refined Medical Luxury — Deep Navy + Champagne Gold
-- **Display font**: Cormorant Garamond (elegant, editorial)
-- **Body font**: DM Sans (clean, modern, readable)
-- **Theme tokens**: All in `global.css` as CSS custom properties
-- **Components**: Cards, buttons, form inputs, badges, toasts, modals, tables — all pre-styled
+| Disease | Model | Accuracy | Dataset |
+|---------|-------|----------|---------|
+| Diabetes | Logistic Regression | **~80%** | Pima Indians Diabetes Dataset |
+| Chronic Kidney Disease | Random Forest | **~96%** | UCI Chronic Kidney Disease Dataset |
 
----
-
-## 🧠 AI Model
-
-The prediction engine loads `model.pkl` (scikit-learn LogisticRegression) from the backend directory.
-
-**Input features (in order):**
-1. Pregnancies
-2. Plasma Glucose Concentration (mg/dL)
-3. Diastolic Blood Pressure (mmHg)
-4. Triceps Skin Fold Thickness (mm)
-5. 2-Hour Serum Insulin (μU/mL)
-6. BMI (kg/m²)
-7. Diabetes Pedigree Function
-8. Age (years)
-
-**Output:**
-- `risk_score`: 0–100 probability
-- `risk_level`: Low / Moderate / High
-- `prediction`: 0 (no diabetes) or 1 (diabetes risk)
-- `recommendations`: personalised clinical advice list
+Models were evaluated using an 80/20 train/test split with accuracy, confusion matrix, and classification reports.
 
 ---
 
-## 🛡️ Security Notes
+## Tech Stack
 
-- JWT tokens expire after 7 days
-- Passwords are hashed with Werkzeug's `generate_password_hash` (PBKDF2-SHA256)
-- File uploads are restricted to safe extensions and 16MB max
-- All prediction and file endpoints require a valid JWT
+**Backend**
+- Python 3.11
+- Flask (REST API)
+- Scikit-learn (model training and inference)
+- Pandas, NumPy (data processing)
+- SQLAlchemy (database ORM)
+
+**Frontend**
+- HTML5, CSS3, Vanilla JavaScript
+- Fetch API for backend communication
+
+**Machine Learning**
+- Logistic Regression (diabetes)
+- Random Forest (kidney disease)
+- Pickle for model serialization
 
 ---
 
-## 📄 License
+## Getting Started
 
-For educational and personal use. Always consult a qualified healthcare professional — this app does not provide medical advice.
+### Prerequisites
+- Python 3.11 or later
+- A modern web browser
+- Git
+
+### 1. Clone the repository
+    git clone https://github.com/kofi-takyi-agyeman/glucosense.git
+    cd glucosense
+
+### 2. Set up the backend
+    cd backend
+    python -m venv venv
+    venv\Scripts\activate
+    pip install -r requirements.txt
+
+### 3. Configure environment variables
+    cp .env.example .env
+
+### 4. Train the models (if model.pkl is missing)
+    python train_model.py
+    python train_kidney_model.py
+
+### 5. Run the backend
+    python app.py
+
+The API will be available at http://localhost:5000.
+
+### 6. Run the frontend
+Open frontend/index.html directly in your browser, or serve it with a simple HTTP server:
+
+    cd frontend
+    python -m http.server 8080
+
+Then visit http://localhost:8080.
+
+---
+
+## API Overview
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| /auth/signup | POST | Register a new user |
+| /auth/login | POST | Authenticate a user |
+| /predict | POST | Predict diabetes risk |
+| /kidney/predict | POST | Predict kidney disease risk |
+| /records | GET | List user's saved assessments |
+| /reports | GET | Generate downloadable report |
+
+---
+
+## Roadmap
+
+- [ ] Deploy live demo on Render
+- [ ] Add unit tests for prediction endpoints
+- [ ] Expand to a third disease (heart disease)
+- [ ] Mobile-responsive UI improvements
+- [ ] Containerize with Docker
+- [ ] Replace pickle serialization with a safer format (joblib / ONNX)
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+## Author
+
+**Kofi Takyi Agyeman**
+Mobile and Machine Learning Engineer, Accra, Ghana
+
+- GitHub: @kofi-takyi-agyeman (https://github.com/kofi-takyi-agyeman)
+- Email: takyikelvin23@gmail.com
